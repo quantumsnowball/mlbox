@@ -14,37 +14,40 @@ from trbox.strategy import Strategy
 from trbox.strategy.context import Context
 from trbox.trader import Trader
 
+from mlbox.agent.memory import Experience, Replay
+
 State = float
 Action = int
+Reward = float
 
 
-@dataclass
-class Experience:
-    state: State
-    action: int
-    reward: float
-    next_state: State
-    done: bool
-
-
-class Replay:
-    def __init__(self, maxlen):
-        self._memory = deque(maxlen=maxlen)
-
-    def __len__(self) -> int:
-        return len(self._memory)
-
-    def remember(self, exp: Experience):
-        state, action, reward, next_state, done = astuple(exp)
-        self._memory.append((state, action, reward, next_state, done))
-
-    def get_batch(self, batch_size):
-        samples = random.sample(self._memory, min(
-            len(self._memory), batch_size))
-        batch = np.array(samples).transpose()
-        states, actions, rewards, next_states, dones = batch
-        states, next_states = np.stack(states), np.stack(next_states)
-        return states, actions, rewards, next_states, dones
+# @dataclass
+# class Experience:
+#     state: State
+#     action: int
+#     reward: float
+#     next_state: State
+#     done: bool
+#
+#
+# class Replay:
+#     def __init__(self, maxlen):
+#         self._memory = deque(maxlen=maxlen)
+#
+#     def __len__(self) -> int:
+#         return len(self._memory)
+#
+#     def remember(self, exp: Experience):
+#         state, action, reward, next_state, done = astuple(exp)
+#         self._memory.append((state, action, reward, next_state, done))
+#
+#     def get_batch(self, batch_size):
+#         samples = random.sample(self._memory, min(
+#             len(self._memory), batch_size))
+#         batch = np.array(samples).transpose()
+#         states, actions, rewards, next_states, dones = batch
+#         states, next_states = np.stack(states), np.stack(next_states)
+#         return states, actions, rewards, next_states, dones
 
 
 class Policy(nn.Module):
@@ -75,7 +78,7 @@ class Agent:
         self._start = to_datetime(start)
         self._end = to_datetime(end)
         self._length = length
-        self._replay = Replay(10000)
+        self._replay = Replay[State, Action, Reward](10000)
         self._policy = Policy().to(self._device)
         self._target = Policy().to(self._device)
         self.update_target()
@@ -140,7 +143,7 @@ class Agent:
             my.memory['state'][2].append(state)
             my.memory['action'][2].append(action)
             try:
-                exp = Experience(
+                exp = Experience[State, Action, Reward](
                     state=my.memory['state'][2][-2],
                     action=my.memory['action'][2][-2],
                     reward=my.dashboard.equity[-1]/my.dashboard.equity[-2] - 1,
