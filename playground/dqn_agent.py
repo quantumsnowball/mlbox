@@ -78,13 +78,12 @@ class Agent:
               gamma: float = 0.99):
         '''learn from reply memory'''
         for _ in range(epochs):
-            states, _, rewards, next_states, _ = \
-                self._replay.get_batch(batch_size)
-            states = torch.tensor(states,
+            batch = self._replay.sample(batch_size)
+            states = torch.tensor(batch.states,
                                   dtype=torch.float32).to(self._device)
-            rewards = torch.tensor(rewards,
+            rewards = torch.tensor(batch.rewards,
                                    dtype=torch.float32).to(self._device)
-            next_states = torch.tensor(next_states,
+            next_states = torch.tensor(batch.next_states,
                                        dtype=torch.float32).to(self._device)
             self._policy.train()
             y = rewards + gamma*self._target(next_states)

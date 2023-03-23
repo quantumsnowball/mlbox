@@ -4,6 +4,7 @@ from dataclasses import astuple, dataclass
 from typing import Generic, TypeVar
 
 import numpy as np
+import numpy.typing as npt
 
 T_State = TypeVar('T_State')
 T_Action = TypeVar('T_Action')
@@ -28,6 +29,15 @@ class Experience(Generic[T_State,
         return astuple(self)
 
 
+@dataclass
+class Batch:
+    states: npt.NDArray
+    actions: npt.NDArray
+    rewards: npt.NDArray
+    next_states: npt.NDArray
+    dones: npt.NDArray
+
+
 class Replay(Generic[T_State,
                      T_Action,
                      T_Reward]):
@@ -46,14 +56,12 @@ class Replay(Generic[T_State,
                                  T_Reward]) -> None:
         self._memory.append(exp)
 
-    def get_batch(self,
-                  batch_size: int) -> tuple[np.ndarray,
-                                            np.ndarray,
-                                            np.ndarray,
-                                            np.ndarray,
-                                            np.ndarray]:
+    def sample(self,
+               batch_size: int) -> Batch:
+        # sampling
         size = min(len(self._memory), batch_size)
         samples = random.sample(self._memory, size)
+        # pack
         states = np.array(tuple(
             s.state for s in samples)).reshape((size, -1))
         actions = np.array(tuple(
@@ -64,4 +72,4 @@ class Replay(Generic[T_State,
             s.next_state for s in samples)).reshape((size, -1))
         dones = np.array(tuple(
             s.done for s in samples)).reshape((size, -1))
-        return states, actions, rewards, next_states, dones
+        return Batch(states, actions, rewards, next_states, dones)
