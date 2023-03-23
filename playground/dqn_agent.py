@@ -1,7 +1,3 @@
-import random
-from collections import deque
-from dataclasses import astuple, dataclass
-
 import numpy as np
 import torch
 from pandas import Series, Timestamp, to_datetime
@@ -16,38 +12,9 @@ from trbox.trader import Trader
 
 from mlbox.agent.memory import Experience, Replay
 
-State = float
+State = tuple[float, ]
 Action = int
 Reward = float
-
-
-# @dataclass
-# class Experience:
-#     state: State
-#     action: int
-#     reward: float
-#     next_state: State
-#     done: bool
-#
-#
-# class Replay:
-#     def __init__(self, maxlen):
-#         self._memory = deque(maxlen=maxlen)
-#
-#     def __len__(self) -> int:
-#         return len(self._memory)
-#
-#     def remember(self, exp: Experience):
-#         state, action, reward, next_state, done = astuple(exp)
-#         self._memory.append((state, action, reward, next_state, done))
-#
-#     def get_batch(self, batch_size):
-#         samples = random.sample(self._memory, min(
-#             len(self._memory), batch_size))
-#         batch = np.array(samples).transpose()
-#         states, actions, rewards, next_states, dones = batch
-#         states, next_states = np.stack(states), np.stack(next_states)
-#         return states, actions, rewards, next_states, dones
 
 
 class Policy(nn.Module):
@@ -110,16 +77,15 @@ class Agent:
               batch_size: int = 512,
               gamma: float = 0.99):
         '''learn from reply memory'''
-        for i_eps in range(epochs):
-            states, actions, rewards, next_states, _ = \
+        for _ in range(epochs):
+            states, _, rewards, next_states, _ = \
                 self._replay.get_batch(batch_size)
             states = torch.tensor(states,
-                                  dtype=torch.float32).reshape(-1, 1).to(self._device)
+                                  dtype=torch.float32).to(self._device)
             rewards = torch.tensor(rewards,
-                                   dtype=torch.float32).reshape(-1, 1).to(self._device)
+                                   dtype=torch.float32).to(self._device)
             next_states = torch.tensor(next_states,
-                                       dtype=torch.float32).reshape(-1, 1).to(self._device)
-            # actions = torch.tensor(actions, dtype=torch.int32)
+                                       dtype=torch.float32).to(self._device)
             self._policy.train()
             y = rewards + gamma*self._target(next_states)
             X = states
@@ -137,7 +103,8 @@ class Agent:
         # on step, save to replay memory
         def step(my: Context[OhlcvWindow]):
             win = my.event.win['Close']
-            state = pnl_ratio(win)
+            pnlr = pnl_ratio(win)
+            state = (pnlr, )
             action = self.decide(state)
             my.portfolio.rebalance(self._symbol, action, my.event.price)
             my.memory['state'][2].append(state)
