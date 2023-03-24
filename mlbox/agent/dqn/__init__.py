@@ -85,7 +85,7 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
     def learn(self,
               epochs: int = 1000,
               batch_size: int = 512,
-              gamma: float = 0.99):
+              gamma: float = 0.99) -> None:
         '''learn from reply memory'''
         for _ in range(epochs):
             # prepare batch of experience
@@ -113,7 +113,7 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
               *,
               update_target_every: int = 10,
               report_progress_every: int = 1,
-              tracing: str = 'total_return'):
+              tracing: str = 'total_return') -> None:
         '''run trade simulation trades, save to replay, then learn'''
         for i_eps in range(n_eps):
             # result = self.research()
@@ -141,7 +141,8 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
     def exploit(self, state: T_State) -> T_Action:
         state_tensor = torch.tensor(state).to(self.device)
         best_value_action = torch.argmax(self.policy(state_tensor))
-        return best_value_action.cpu().numpy()
+        result: T_Action = best_value_action.cpu().numpy()
+        return result
 
     @override
     def decide(self,

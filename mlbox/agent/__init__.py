@@ -15,7 +15,7 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
     observation_space: Space[T_State]
     device: Literal['cuda', 'cpu', ]
 
-    def __new__(cls: type[Self]) -> Self:
+    def __new__(cls) -> Self:
         try:
             # ensure attrs are implemented in subclass instance
             cls.action_space
@@ -50,7 +50,7 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
     #
 
     @abstractmethod
-    def explore(self, state: T_State) -> T_Action:
+    def explore(self) -> T_Action:
         ...
 
     @abstractmethod
