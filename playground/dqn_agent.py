@@ -1,111 +1,76 @@
 import numpy as np
+import numpy.typing as npt
 import torch
-from pandas import Series, Timestamp, to_datetime
-from torch import Tensor, nn, tensor
+from gymnasium.spaces import Box, Discrete
+from torch import nn
 from trbox.broker.paper import PaperEX
-from trbox.common.types import Symbol
 from trbox.event.market import OhlcvWindow
 from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
-from trbox.strategy import Strategy
+from trbox.strategy import Hook, Strategy
 from trbox.strategy.context import Context
 from trbox.trader import Trader
+from typing_extensions import override
 
-from mlbox.agent.memory import Experience, Replay
+from mlbox.agent.dqn import DQNAgent
+from mlbox.agent.memory import Experience
+from mlbox.neural import FullyConnected
+from mlbox.utils import pnl_ratio
 
-State = tuple[float, ]
-Action = int
-Reward = float
+SYMBOL = 'BTC-USD'
+SYMBOLS = (SYMBOL, )
+START = '2018-01-01'
+END = '2018-12-31'
+LENGTH = 200
 
 
-class Policy(nn.Module):
-    def __init__(self):
+# what agent can observe
+State = npt.NDArray[np.float32]
+# what agent will do
+Action = np.int64
+# what agent will get
+Reward = np.float32
+
+
+class MyAgent(DQNAgent[State, Action, Reward]):
+    device = 'cuda'
+    # 0 = no position, 1 = full position
+    action_space = Discrete(2)
+    # some normalized indicator, e.g. pnl-ratio percentage
+    observation_space = Box(low=0, high=1, shape=(1,), )
+
+    def __init__(self) -> None:
         super().__init__()
-        self.network = nn.Sequential(
-            nn.Linear(1, 512),
-            nn.ReLU(),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, 2)
+        self.policy = FullyConnected(1, 2).to(self.device)
+        self.target = FullyConnected(1, 2).to(self.device)
+        self.update_target()
+        self.optimizer = torch.optim.SGD(self.policy.parameters(),
+                                         lr=1e-3)
+        self.loss_function = nn.CrossEntropyLoss()
+        self.env = Trader(
+            strategy=Strategy(name='agent')
+            .on(SYMBOL, OhlcvWindow, do=self.explorer),
+            market=YahooHistoricalWindows(
+                symbols=SYMBOLS,
+                start=START,
+                end=END,
+                length=LENGTH),
+            broker=PaperEX(SYMBOLS)
         )
 
-    def forward(self, x: Tensor):
-        logits = self.network(x)
-        return logits
-
-
-class Agent:
-    def __init__(self,
-                 symbol: Symbol,
-                 start: Timestamp | str,
-                 end: Timestamp | str,
-                 length: int) -> None:
-        self._device = 'cuda'
-        self._symbol = symbol
-        self._symbols = (symbol, )
-        self._start = to_datetime(start)
-        self._end = to_datetime(end)
-        self._length = length
-        self._replay = Replay[State, Action, Reward](10000)
-        self._policy = Policy().to(self._device)
-        self._target = Policy().to(self._device)
-        self.update_target()
-        self._optimizer = torch.optim.SGD(self._policy.parameters(),
-                                          lr=1e-3)
-        self._loss_fn = nn.CrossEntropyLoss()
-
-    #
-    # acting
-    #
-
-    def decide(self,
-               state: State,
-               *,
-               epilson: float = 0.5) -> Action:
-        if np.random.random() > epilson:
-            return int(np.random.choice([0, 1]))
-        else:
-            return int(torch.argmax(self._policy(tensor([state, ]).to(self._device))))
-    #
-    # training
-    #
-
-    def update_target(self) -> None:
-        self._target.load_state_dict(self._policy.state_dict())
-
-    def learn(self,
-              epochs: int = 1000,
-              batch_size: int = 512,
-              gamma: float = 0.99):
-        '''learn from reply memory'''
-        for _ in range(epochs):
-            batch = self._replay.sample(batch_size)
-            states = torch.tensor(batch.states,
-                                  dtype=torch.float32).to(self._device)
-            rewards = torch.tensor(batch.rewards,
-                                   dtype=torch.float32).to(self._device)
-            next_states = torch.tensor(batch.next_states,
-                                       dtype=torch.float32).to(self._device)
-            self._policy.train()
-            y = rewards + gamma*self._target(next_states)
-            X = states
-            pred = self._policy(X)
-            loss = self._loss_fn(pred, y)
-            self._optimizer.zero_grad()
-            loss.backward()
-            self._optimizer.step()
-
-    def explore(self):
-        def pnl_ratio(win: Series) -> float:
-            pnlr = Series(win.rank(pct=True))
-            return float(pnlr[-1])
-
+    @property
+    @override
+    def explorer(self) -> Hook:
         # on step, save to replay memory
         def step(my: Context[OhlcvWindow]):
+            # observe
             win = my.event.win['Close']
             pnlr = pnl_ratio(win)
-            state = (pnlr, )
+            feature = [pnlr, ]
+            # take action
+            state = np.array([feature, ], dtype=np.float32)
             action = self.decide(state)
-            my.portfolio.rebalance(self._symbol, action, my.event.price)
+            my.portfolio.rebalance(SYMBOL, float(action), my.event.price)
+            # collect experience
             my.memory['state'][2].append(state)
             my.memory['action'][2].append(action)
             try:
@@ -116,34 +81,12 @@ class Agent:
                     next_state=my.memory['state'][2][-1],
                     done=False,
                 )
-                self._replay.remember(exp)
+                self.remember(exp)
             except IndexError:
                 pass
 
-        # run simulation
-        t = Trader(
-            strategy=Strategy(name='agent')
-            .on(self._symbol, OhlcvWindow, do=step),
-            market=YahooHistoricalWindows(
-                symbols=self._symbols,
-                start=self._start,
-                end=self._end,
-                length=self._length),
-            broker=PaperEX(self._symbols)
-        )
-        t.run()
-        return t.portfolio.metrics.total_return
-
-    def train(self,
-              n_eps: int = 1000):
-        '''run trade simulation trades, save to replay, then learn'''
-        for i_eps in range(n_eps):
-            total_return = self.explore()
-            self.learn()
-            if i_eps % 50 == 0:
-                self.update_target()
-            print(f'total_return = {total_return:.2%} [{i_eps+1} / {n_eps}]')
+        return step
 
 
-agent = Agent('BTC-USD', '2018-01-01', '2018-12-31', 200)
+agent = MyAgent()
 agent.train()

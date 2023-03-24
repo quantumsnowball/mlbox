@@ -1,7 +1,7 @@
 import random
 from collections import deque
-from dataclasses import astuple, dataclass
-from typing import Generic, TypeVar
+from dataclasses import dataclass
+from typing import Any, Generic, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -26,16 +26,16 @@ class Experience(Generic[T_State,
                              T_Reward,
                              T_State,
                              bool]:
-        return astuple(self)
+        return (self.state, self.action, self.reward, self.next_state, self.done, )
 
 
 @dataclass
 class Batch:
-    states: npt.NDArray
-    actions: npt.NDArray
-    rewards: npt.NDArray
-    next_states: npt.NDArray
-    dones: npt.NDArray
+    states: npt.NDArray[np.float32]
+    actions: npt.NDArray[np.float32]
+    rewards: npt.NDArray[np.float32]
+    next_states: npt.NDArray[np.float32]
+    dones: npt.NDArray[np.bool8]
 
 
 class Replay(Generic[T_State,
