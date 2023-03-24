@@ -32,14 +32,14 @@ class Agent(ABC, Generic[T_State, T_Action]):
     def learn(self,
               epochs: int = 1000,
               batch_size: int = 512,
-              gamma: float = 0.99):
+              gamma: float = 0.99) -> None:
         pass
 
     @abstractmethod
-    def explore(self):
+    def explore(self) -> float:
         pass
 
     @abstractmethod
     def train(self,
-              n_eps: int = 1000):
+              n_eps: int = 1000) -> None:
         pass
