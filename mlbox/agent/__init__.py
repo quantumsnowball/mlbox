@@ -9,8 +9,8 @@ T_Reward = TypeVar('T_Reward')
 
 
 class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
-    action_space: Space
-    observation_space: Space
+    action_space: Space[T_Action]
+    observation_space: Space[T_State]
     device: Literal['cuda', 'cpu', ]
 
     def __new__(cls: type[Self]) -> Self:

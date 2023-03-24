@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 import torch
 from gymnasium.spaces import Box, Discrete
 from pandas import Series
@@ -20,18 +21,21 @@ START = '2018-01-01'
 END = '2018-12-31'
 LENGTH = 200
 
+
 # what agent can observe
-State = tuple[float, ]
+State = npt.NDArray[np.float32]
 # what agent will do
-Action = int
+Action = np.int64
 # what agent will get
-Reward = float
+Reward = np.float32
 
 
-class MyAgent(DQNAgent):
+class MyAgent(DQNAgent[State, Action, Reward]):
     device = 'cuda'
+    # 0 = no position, 1 = full position
     action_space = Discrete(2)
-    observation_space = Box(low=0, high=1, shape=(1,))
+    # some normalized indicator, e.g. pnl-ratio percentage
+    observation_space = Box(low=0, high=1, shape=(1,), )
 
     def __init__(self) -> None:
         super().__init__()
@@ -53,7 +57,8 @@ class MyAgent(DQNAgent):
         if np.random.random() > epilson:
             return self.action_space.sample()
         else:
-            return int(torch.argmax(self.policy(tensor([state, ]).to(self.device))))
+            state_tensor = tensor(state).to(self.device)
+            return torch.argmax(self.policy(state_tensor)).cpu().numpy()
 
     #
     # training
@@ -90,9 +95,10 @@ class MyAgent(DQNAgent):
         def step(my: Context[OhlcvWindow]):
             win = my.event.win['Close']
             pnlr = pnl_ratio(win)
-            state = (pnlr, )
+            feature = [pnlr, ]
+            state = np.array([feature, ], dtype=np.float32)
             action = self.decide(state)
-            my.portfolio.rebalance(SYMBOL, action, my.event.price)
+            my.portfolio.rebalance(SYMBOL, float(action), my.event.price)
             my.memory['state'][2].append(state)
             my.memory['action'][2].append(action)
             try:
