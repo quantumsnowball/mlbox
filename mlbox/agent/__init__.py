@@ -28,6 +28,14 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
     #
 
     @abstractmethod
+    def explore(self, state: T_State) -> T_Action:
+        pass
+
+    @abstractmethod
+    def exploit(self, state: T_State) -> T_Action:
+        pass
+
+    @abstractmethod
     def decide(self,
                state: T_State,
                *,
@@ -46,7 +54,7 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
         pass
 
     @abstractmethod
-    def explore(self) -> float:
+    def research(self) -> float:
         pass
 
     @abstractmethod

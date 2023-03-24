@@ -72,7 +72,7 @@ class MyAgent(DQNAgent[State, Action, Reward]):
             loss.backward()
             self.optimizer.step()
 
-    def explore(self):
+    def research(self):
         def pnl_ratio(win: Series) -> float:
             pnlr = Series(win.rank(pct=True))
             return float(pnlr[-1])
@@ -117,7 +117,7 @@ class MyAgent(DQNAgent[State, Action, Reward]):
               n_eps: int = 1000):
         '''run trade simulation trades, save to replay, then learn'''
         for i_eps in range(n_eps):
-            total_return = self.explore()
+            total_return = self.research()
             self.learn()
             if i_eps % 50 == 0:
                 self.update_target()

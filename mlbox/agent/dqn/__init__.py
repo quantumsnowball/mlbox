@@ -72,7 +72,7 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
         self._loss_function = loss_function
 
     #
-    # operations
+    # training
     #
 
     def update_target(self) -> None:
@@ -84,12 +84,22 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
     #
 
     @override
+    def explore(self) -> T_Action:
+        random_action = self.action_space.sample()
+        return random_action
+
+    @override
+    def exploit(self, state: T_State) -> T_Action:
+        state_tensor = torch.tensor(state).to(self.device)
+        best_value_action = torch.argmax(self.policy(state_tensor))
+        return best_value_action.cpu().numpy()
+
+    @override
     def decide(self,
                state: T_State,
                *,
                epilson: float = 0.5) -> T_Action:
         if np.random.random() > epilson:
-            return self.action_space.sample()
+            return self.explore()
         else:
-            state_tensor = torch.tensor(state).to(self.device)
-            return torch.argmax(self.policy(state_tensor)).cpu().numpy()
+            return self.exploit(state)
