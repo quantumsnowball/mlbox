@@ -44,7 +44,7 @@ class MyAgent(DQNAgent[State, Action, Reward]):
         self.update_target()
         self.optimizer = torch.optim.SGD(self.policy.parameters(),
                                          lr=1e-3)
-        self._loss_fn = nn.CrossEntropyLoss()
+        self.loss_function = nn.CrossEntropyLoss()
 
     #
     # training
@@ -67,7 +67,7 @@ class MyAgent(DQNAgent[State, Action, Reward]):
             y = rewards + gamma*self.target(next_states)
             X = states
             pred = self.policy(X)
-            loss = self._loss_fn(pred, y)
+            loss = self.loss_function(pred, y)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()

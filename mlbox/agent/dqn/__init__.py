@@ -3,6 +3,7 @@ from typing import Any, TypeVar
 import numpy as np
 import torch
 from torch.nn import Module
+from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
 from typing_extensions import override
 
@@ -58,6 +59,17 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
     @optimizer.setter
     def optimizer(self, optimizer: Optimizer) -> None:
         self._optimizer = optimizer
+
+    @property
+    def loss_function(self) -> _Loss:
+        try:
+            return self._loss_function
+        except AttributeError:
+            raise NotImplementedError('loss_function') from None
+
+    @loss_function.setter
+    def loss_function(self, loss_function: _Loss) -> None:
+        self._loss_function = loss_function
 
     #
     # operations
