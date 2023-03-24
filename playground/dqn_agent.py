@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from gymnasium import Space
 from gymnasium.spaces import Box, Discrete
 from pandas import Series
 from torch import nn, tensor
@@ -10,7 +9,6 @@ from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
 from trbox.strategy import Strategy
 from trbox.strategy.context import Context
 from trbox.trader import Trader
-from typing_extensions import override
 
 from mlbox.agent.dqn import DQNAgent
 from mlbox.agent.memory import Experience
@@ -31,13 +29,14 @@ Reward = float
 
 
 class MyAgent(DQNAgent):
+    device = 'cuda'
     action_space = Discrete(2)
     observation_space = Box(low=0, high=1, shape=(1,))
 
     def __init__(self) -> None:
         super().__init__()
-        self._policy = FullyConnected(1, 2).to(self._device)
-        self._target = FullyConnected(1, 2).to(self._device)
+        self._policy = FullyConnected(1, 2).to(self.device)
+        self._target = FullyConnected(1, 2).to(self.device)
         self.update_target()
         self._optimizer = torch.optim.SGD(self._policy.parameters(),
                                           lr=1e-3)
@@ -54,7 +53,7 @@ class MyAgent(DQNAgent):
         if np.random.random() > epilson:
             return self.action_space.sample()
         else:
-            return int(torch.argmax(self._policy(tensor([state, ]).to(self._device))))
+            return int(torch.argmax(self._policy(tensor([state, ]).to(self.device))))
 
     #
     # training
@@ -71,11 +70,11 @@ class MyAgent(DQNAgent):
         for _ in range(epochs):
             batch = self._replay.sample(batch_size)
             states = torch.tensor(batch.states,
-                                  dtype=torch.float32).to(self._device)
+                                  dtype=torch.float32).to(self.device)
             rewards = torch.tensor(batch.rewards,
-                                   dtype=torch.float32).to(self._device)
+                                   dtype=torch.float32).to(self.device)
             next_states = torch.tensor(batch.next_states,
-                                       dtype=torch.float32).to(self._device)
+                                       dtype=torch.float32).to(self.device)
             self._policy.train()
             y = rewards + gamma*self._target(next_states)
             X = states
