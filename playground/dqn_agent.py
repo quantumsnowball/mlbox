@@ -62,12 +62,15 @@ class MyAgent(DQNAgent[State, Action, Reward]):
     def explorer(self) -> Hook:
         # on step, save to replay memory
         def step(my: Context[OhlcvWindow]):
+            # observe
             win = my.event.win['Close']
             pnlr = pnl_ratio(win)
             feature = [pnlr, ]
+            # take action
             state = np.array([feature, ], dtype=np.float32)
             action = self.decide(state)
             my.portfolio.rebalance(SYMBOL, float(action), my.event.price)
+            # collect experience
             my.memory['state'][2].append(state)
             my.memory['action'][2].append(action)
             try:
