@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from pandas import Series, Timestamp, to_datetime
-from torch import Tensor, nn, tensor
+from torch import nn, tensor
 from trbox.broker.paper import PaperEX
 from trbox.common.types import Symbol
 from trbox.event.market import OhlcvWindow
@@ -12,26 +12,11 @@ from trbox.trader import Trader
 
 from mlbox.agent.dqn import DQNAgent
 from mlbox.agent.memory import Experience, Replay
+from mlbox.neural import FullyConnected
 
 State = tuple[float, ]
 Action = int
 Reward = float
-
-
-class Policy(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.network = nn.Sequential(
-            nn.Linear(1, 512),
-            nn.ReLU(),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, 2)
-        )
-
-    def forward(self, x: Tensor):
-        logits = self.network(x)
-        return logits
 
 
 class Agent(DQNAgent):
@@ -47,8 +32,8 @@ class Agent(DQNAgent):
         self._end = to_datetime(end)
         self._length = length
         self._replay = Replay[State, Action, Reward](10000)
-        self._policy = Policy().to(self._device)
-        self._target = Policy().to(self._device)
+        self._policy = FullyConnected(1, 2).to(self._device)
+        self._target = FullyConnected(1, 2).to(self._device)
         self.update_target()
         self._optimizer = torch.optim.SGD(self._policy.parameters(),
                                           lr=1e-3)
