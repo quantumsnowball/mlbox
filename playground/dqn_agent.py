@@ -19,8 +19,9 @@ from mlbox.utils import pnl_ratio
 SYMBOL = 'BTC-USD'
 SYMBOLS = (SYMBOL, )
 START = '2018-01-01'
-END = '2018-12-31'
+END = '2020-12-31'
 LENGTH = 200
+INTERVAL = 30
 
 
 # what agent can observe
@@ -62,28 +63,31 @@ class MyAgent(DQNAgent[State, Action, Reward]):
     def explorer(self) -> Hook:
         # on step, save to replay memory
         def step(my: Context[OhlcvWindow]):
-            # observe
-            win = my.event.win['Close']
-            pnlr = pnl_ratio(win)
-            feature = [pnlr, ]
-            # take action
-            state = np.array([feature, ], dtype=np.float32)
-            action = self.decide(state)
-            my.portfolio.rebalance(SYMBOL, float(action), my.event.price)
-            # collect experience
-            my.memory['state'][2].append(state)
-            my.memory['action'][2].append(action)
-            try:
-                exp = Experience[State, Action, Reward](
-                    state=my.memory['state'][2][-2],
-                    action=my.memory['action'][2][-2],
-                    reward=my.dashboard.equity[-1]/my.dashboard.equity[-2] - 1,
-                    next_state=my.memory['state'][2][-1],
-                    done=False,
-                )
-                self.remember(exp)
-            except IndexError:
-                pass
+            if my.count.every(INTERVAL):
+                # observe
+                win = my.event.win['Close']
+                pnlr = pnl_ratio(win)
+                feature = [pnlr, ]
+                # take action
+                state = np.array([feature, ], dtype=np.float32)
+                action = self.decide(state)
+                my.portfolio.rebalance(SYMBOL, float(action), my.event.price)
+                # collect experience
+                my.memory['state'][2].append(state)
+                my.memory['action'][2].append(action)
+                my.memory['equity'][2].append(my.dashboard.equity[-1])
+                try:
+                    exp = Experience[State, Action, Reward](
+                        state=my.memory['state'][2][-2],
+                        action=my.memory['action'][2][-2],
+                        reward=(my.memory['equity'][2][-1] /
+                                my.memory['equity'][2][-2] - 1),
+                        next_state=my.memory['state'][2][-1],
+                        done=False,
+                    )
+                    self.remember(exp)
+                except IndexError:
+                    pass
 
         return step
 
