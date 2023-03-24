@@ -10,6 +10,7 @@ from trbox.strategy import Strategy
 from trbox.strategy.context import Context
 from trbox.trader import Trader
 
+from mlbox.agent.dqn import DQNAgent
 from mlbox.agent.memory import Experience, Replay
 
 State = tuple[float, ]
@@ -33,7 +34,7 @@ class Policy(nn.Module):
         return logits
 
 
-class Agent:
+class Agent(DQNAgent):
     def __init__(self,
                  symbol: Symbol,
                  start: Timestamp | str,
