@@ -44,3 +44,11 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
     @target.setter
     def target(self, target: Module) -> None:
         self._target = target
+
+    #
+    # operations
+    #
+
+    def update_target(self) -> None:
+        weights = self.policy.state_dict()
+        self.target.load_state_dict(weights)

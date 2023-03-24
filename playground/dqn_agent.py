@@ -59,9 +59,6 @@ class MyAgent(DQNAgent):
     # training
     #
 
-    def update_target(self) -> None:
-        self.target.load_state_dict(self.policy.state_dict())
-
     def learn(self,
               epochs: int = 1000,
               batch_size: int = 512,
