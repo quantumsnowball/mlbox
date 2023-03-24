@@ -2,6 +2,7 @@ from typing import Any, TypeVar
 
 import numpy as np
 import torch
+from torch import float32, tensor
 from torch.nn import Module
 from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
@@ -86,18 +87,22 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
               gamma: float = 0.99):
         '''learn from reply memory'''
         for _ in range(epochs):
+            # prepare batch of experience
             batch = self._replay.sample(batch_size)
-            states = torch.tensor(batch.states,
-                                  dtype=torch.float32).to(self.device)
-            rewards = torch.tensor(batch.rewards,
-                                   dtype=torch.float32).to(self.device)
-            next_states = torch.tensor(batch.next_states,
-                                       dtype=torch.float32).to(self.device)
+            states = tensor(batch.states,
+                            dtype=float32).to(self.device)
+            rewards = tensor(batch.rewards,
+                             dtype=float32).to(self.device)
+            next_states = tensor(batch.next_states,
+                                 dtype=float32).to(self.device)
+            # train mode
             self.policy.train()
-            y = rewards + gamma*self.target(next_states)
+            # calc features and targets
             X = states
-            pred = self.policy(X)
-            loss = self.loss_function(pred, y)
+            y = rewards + gamma*self.target(next_states)
+            # back propagation
+            predicted = self.policy(X)
+            loss = self.loss_function(predicted, y)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
