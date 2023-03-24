@@ -35,10 +35,10 @@ class MyAgent(DQNAgent):
 
     def __init__(self) -> None:
         super().__init__()
-        self._policy = FullyConnected(1, 2).to(self.device)
+        self.policy = FullyConnected(1, 2).to(self.device)
         self._target = FullyConnected(1, 2).to(self.device)
         self.update_target()
-        self._optimizer = torch.optim.SGD(self._policy.parameters(),
+        self._optimizer = torch.optim.SGD(self.policy.parameters(),
                                           lr=1e-3)
         self._loss_fn = nn.CrossEntropyLoss()
 
@@ -53,14 +53,14 @@ class MyAgent(DQNAgent):
         if np.random.random() > epilson:
             return self.action_space.sample()
         else:
-            return int(torch.argmax(self._policy(tensor([state, ]).to(self.device))))
+            return int(torch.argmax(self.policy(tensor([state, ]).to(self.device))))
 
     #
     # training
     #
 
     def update_target(self) -> None:
-        self._target.load_state_dict(self._policy.state_dict())
+        self._target.load_state_dict(self.policy.state_dict())
 
     def learn(self,
               epochs: int = 1000,
@@ -75,10 +75,10 @@ class MyAgent(DQNAgent):
                                    dtype=torch.float32).to(self.device)
             next_states = torch.tensor(batch.next_states,
                                        dtype=torch.float32).to(self.device)
-            self._policy.train()
+            self.policy.train()
             y = rewards + gamma*self._target(next_states)
             X = states
-            pred = self._policy(X)
+            pred = self.policy(X)
             loss = self._loss_fn(pred, y)
             self._optimizer.zero_grad()
             loss.backward()
