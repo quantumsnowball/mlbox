@@ -2,7 +2,6 @@ import numpy as np
 import numpy.typing as npt
 import torch
 from gymnasium.spaces import Box, Discrete
-from pandas import Series
 from torch import nn
 from trbox.broker.paper import PaperEX
 from trbox.event.market import OhlcvWindow
@@ -14,6 +13,7 @@ from trbox.trader import Trader
 from mlbox.agent.dqn import DQNAgent
 from mlbox.agent.memory import Experience
 from mlbox.neural import FullyConnected
+from mlbox.utils import pnl_ratio
 
 SYMBOL = 'BTC-USD'
 SYMBOLS = (SYMBOL, )
@@ -51,10 +51,6 @@ class MyAgent(DQNAgent[State, Action, Reward]):
     #
 
     def research(self) -> float:
-        def pnl_ratio(win: Series) -> float:
-            pnlr = Series(win.rank(pct=True))
-            return float(pnlr[-1])
-
         # on step, save to replay memory
         def step(my: Context[OhlcvWindow]):
             win = my.event.win['Close']
