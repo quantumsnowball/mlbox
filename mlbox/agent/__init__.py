@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Literal, TypeVar
+from typing import Generic, Literal, Self, TypeVar
+
+from gymnasium import Space
 
 T_State = TypeVar('T_State')
 T_Action = TypeVar('T_Action')
@@ -7,6 +9,18 @@ T_Reward = TypeVar('T_Reward')
 
 
 class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
+    action_space: Space
+    observation_space: Space
+
+    def __new__(cls: type[Self]) -> Self:
+        try:
+            # ensure attrs are implemented in subclass instance
+            cls.action_space
+            cls.observation_space
+            return super().__new__(cls)
+        except AttributeError as e:
+            raise NotImplementedError(e.name) from None
+
     def __init__(self,
                  *,
                  device: Literal['cuda', 'cpu'] = 'cuda') -> None:
@@ -26,10 +40,6 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
     #
     # training
     #
-
-    @abstractmethod
-    def update_target(self) -> None:
-        pass
 
     @abstractmethod
     def learn(self,
