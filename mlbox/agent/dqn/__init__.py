@@ -139,10 +139,11 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
 
     @override
     def exploit(self, state: T_State) -> T_Action:
-        state_tensor = torch.tensor(state).to(self.device)
-        best_value_action = torch.argmax(self.policy(state_tensor))
-        result: T_Action = best_value_action.cpu().numpy()
-        return result
+        with torch.no_grad():
+            state_tensor = torch.tensor(state).to(self.device)
+            best_value_action = torch.argmax(self.policy(state_tensor))
+            result: T_Action = best_value_action.cpu().numpy()
+            return result
 
     @override
     def decide(self,
