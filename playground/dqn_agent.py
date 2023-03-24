@@ -50,28 +50,6 @@ class MyAgent(DQNAgent[State, Action, Reward]):
     # training
     #
 
-    def learn(self,
-              epochs: int = 1000,
-              batch_size: int = 512,
-              gamma: float = 0.99):
-        '''learn from reply memory'''
-        for _ in range(epochs):
-            batch = self._replay.sample(batch_size)
-            states = torch.tensor(batch.states,
-                                  dtype=torch.float32).to(self.device)
-            rewards = torch.tensor(batch.rewards,
-                                   dtype=torch.float32).to(self.device)
-            next_states = torch.tensor(batch.next_states,
-                                       dtype=torch.float32).to(self.device)
-            self.policy.train()
-            y = rewards + gamma*self.target(next_states)
-            X = states
-            pred = self.policy(X)
-            loss = self.loss_function(pred, y)
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
     def research(self):
         def pnl_ratio(win: Series) -> float:
             pnlr = Series(win.rank(pct=True))
