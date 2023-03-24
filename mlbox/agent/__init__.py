@@ -51,18 +51,18 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
 
     @abstractmethod
     def explore(self, state: T_State) -> T_Action:
-        pass
+        ...
 
     @abstractmethod
     def exploit(self, state: T_State) -> T_Action:
-        pass
+        ...
 
     @abstractmethod
     def decide(self,
                state: T_State,
                *,
                epilson: float = 0.5) -> T_Action:
-        pass
+        ...
 
     #
     # training
@@ -73,9 +73,9 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
               epochs: int = 1000,
               batch_size: int = 512,
               gamma: float = 0.99) -> None:
-        pass
+        ...
 
     @abstractmethod
     def train(self,
               n_eps: int = 1000) -> None:
-        pass
+        ...

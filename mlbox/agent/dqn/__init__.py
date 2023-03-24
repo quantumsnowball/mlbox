@@ -113,18 +113,18 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
               *,
               update_target_every: int = 10,
               report_progress_every: int = 1,
-              result_tag: str = 'Result'):
+              tracing: str = 'total_return'):
         '''run trade simulation trades, save to replay, then learn'''
         for i_eps in range(n_eps):
             # result = self.research()
             self.env.run()
-            result = self.env.portfolio.metrics.total_return
+            result = getattr(self.env.portfolio.metrics, tracing, float('nan'))
             self.learn()
             if i_eps % update_target_every == 0:
                 self.update_target()
             if i_eps % report_progress_every == 0:
                 print(
-                    f'{result_tag} = {result:.2%} '
+                    f'{tracing} = {result:.4f} '
                     f'[{i_eps+1} / {n_eps}]'
                 )
 
