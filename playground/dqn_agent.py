@@ -47,20 +47,6 @@ class MyAgent(DQNAgent[State, Action, Reward]):
         self._loss_fn = nn.CrossEntropyLoss()
 
     #
-    # acting
-    #
-
-    def decide(self,
-               state: State,
-               *,
-               epilson: float = 0.5) -> Action:
-        if np.random.random() > epilson:
-            return self.action_space.sample()
-        else:
-            state_tensor = tensor(state).to(self.device)
-            return torch.argmax(self.policy(state_tensor)).cpu().numpy()
-
-    #
     # training
     #
 

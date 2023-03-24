@@ -1,3 +1,5 @@
+import numpy as np
+import torch
 from typing import Any, TypeVar
 
 from torch.nn import Module
@@ -52,3 +54,17 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
     def update_target(self) -> None:
         weights = self.policy.state_dict()
         self.target.load_state_dict(weights)
+
+    #
+    # acting
+    #
+
+    def decide(self,
+               state: T_State,
+               *,
+               epilson: float = 0.5) -> T_Action:
+        if np.random.random() > epilson:
+            return self.action_space.sample()
+        else:
+            state_tensor = torch.tensor(state).to(self.device)
+            return torch.argmax(self.policy(state_tensor)).cpu().numpy()
