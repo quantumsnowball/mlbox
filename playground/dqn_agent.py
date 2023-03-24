@@ -3,7 +3,6 @@ import torch
 from pandas import Series, Timestamp, to_datetime
 from torch import nn, tensor
 from trbox.broker.paper import PaperEX
-from trbox.common.types import Symbol
 from trbox.event.market import OhlcvWindow
 from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
 from trbox.strategy import Strategy
@@ -14,23 +13,20 @@ from mlbox.agent.dqn import DQNAgent
 from mlbox.agent.memory import Experience, Replay
 from mlbox.neural import FullyConnected
 
+SYMBOL = 'BTC-USD'
+SYMBOLS = (SYMBOL, )
+START = '2018-01-01'
+END = '2018-12-31'
+LENGTH = 200
+
 State = tuple[float, ]
 Action = int
 Reward = float
 
 
 class Agent(DQNAgent):
-    def __init__(self,
-                 symbol: Symbol,
-                 start: Timestamp | str,
-                 end: Timestamp | str,
-                 length: int) -> None:
+    def __init__(self) -> None:
         self._device = 'cuda'
-        self._symbol = symbol
-        self._symbols = (symbol, )
-        self._start = to_datetime(start)
-        self._end = to_datetime(end)
-        self._length = length
         self._replay = Replay[State, Action, Reward](10000)
         self._policy = FullyConnected(1, 2).to(self._device)
         self._target = FullyConnected(1, 2).to(self._device)
@@ -91,7 +87,7 @@ class Agent(DQNAgent):
             pnlr = pnl_ratio(win)
             state = (pnlr, )
             action = self.decide(state)
-            my.portfolio.rebalance(self._symbol, action, my.event.price)
+            my.portfolio.rebalance(SYMBOL, action, my.event.price)
             my.memory['state'][2].append(state)
             my.memory['action'][2].append(action)
             try:
@@ -109,13 +105,13 @@ class Agent(DQNAgent):
         # run simulation
         t = Trader(
             strategy=Strategy(name='agent')
-            .on(self._symbol, OhlcvWindow, do=step),
+            .on(SYMBOL, OhlcvWindow, do=step),
             market=YahooHistoricalWindows(
-                symbols=self._symbols,
-                start=self._start,
-                end=self._end,
-                length=self._length),
-            broker=PaperEX(self._symbols)
+                symbols=SYMBOLS,
+                start=START,
+                end=END,
+                length=LENGTH),
+            broker=PaperEX(SYMBOLS)
         )
         t.run()
         return t.portfolio.metrics.total_return
@@ -131,5 +127,5 @@ class Agent(DQNAgent):
             print(f'total_return = {total_return:.2%} [{i_eps+1} / {n_eps}]')
 
 
-agent = Agent('BTC-USD', '2018-01-01', '2018-12-31', 200)
+agent = Agent()
 agent.train()
