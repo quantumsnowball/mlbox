@@ -6,9 +6,10 @@ from torch import nn
 from trbox.broker.paper import PaperEX
 from trbox.event.market import OhlcvWindow
 from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
-from trbox.strategy import Strategy
+from trbox.strategy import Hook, Strategy
 from trbox.strategy.context import Context
 from trbox.trader import Trader
+from typing_extensions import override
 
 from mlbox.agent.dqn import DQNAgent
 from mlbox.agent.memory import Experience
@@ -45,12 +46,20 @@ class MyAgent(DQNAgent[State, Action, Reward]):
         self.optimizer = torch.optim.SGD(self.policy.parameters(),
                                          lr=1e-3)
         self.loss_function = nn.CrossEntropyLoss()
+        self.env = Trader(
+            strategy=Strategy(name='agent')
+            .on(SYMBOL, OhlcvWindow, do=self.explorer),
+            market=YahooHistoricalWindows(
+                symbols=SYMBOLS,
+                start=START,
+                end=END,
+                length=LENGTH),
+            broker=PaperEX(SYMBOLS)
+        )
 
-    #
-    # training
-    #
-
-    def research(self) -> float:
+    @property
+    @override
+    def explorer(self) -> Hook:
         # on step, save to replay memory
         def step(my: Context[OhlcvWindow]):
             win = my.event.win['Close']
@@ -73,19 +82,7 @@ class MyAgent(DQNAgent[State, Action, Reward]):
             except IndexError:
                 pass
 
-        # run simulation
-        t = Trader(
-            strategy=Strategy(name='agent')
-            .on(SYMBOL, OhlcvWindow, do=step),
-            market=YahooHistoricalWindows(
-                symbols=SYMBOLS,
-                start=START,
-                end=END,
-                length=LENGTH),
-            broker=PaperEX(SYMBOLS)
-        )
-        t.run()
-        return t.portfolio.metrics.total_return
+        return step
 
 
 agent = MyAgent()

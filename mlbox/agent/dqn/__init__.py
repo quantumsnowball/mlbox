@@ -116,7 +116,9 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
               result_tag: str = 'Result'):
         '''run trade simulation trades, save to replay, then learn'''
         for i_eps in range(n_eps):
-            result = self.research()
+            # result = self.research()
+            self.env.run()
+            result = self.env.portfolio.metrics.total_return
             self.learn()
             if i_eps % update_target_every == 0:
                 self.update_target()

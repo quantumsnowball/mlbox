@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Generic, Literal, Self, TypeVar
 
 from gymnasium import Space
+from trbox.strategy import Hook
+from trbox.trader import Trader
 
 T_State = TypeVar('T_State')
 T_Action = TypeVar('T_Action')
@@ -22,6 +24,26 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
             return super().__new__(cls)
         except AttributeError as e:
             raise NotImplementedError(e.name) from None
+
+    #
+    # props
+    #
+
+    @property
+    @abstractmethod
+    def explorer(self) -> Hook:
+        ...
+
+    @property
+    def env(self) -> Trader:
+        try:
+            return self._env
+        except AttributeError:
+            raise NotImplementedError('env') from None
+
+    @env.setter
+    def env(self, env: Trader) -> None:
+        self._env = env
 
     #
     # acting
@@ -51,10 +73,6 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
               epochs: int = 1000,
               batch_size: int = 512,
               gamma: float = 0.99) -> None:
-        pass
-
-    @abstractmethod
-    def research(self) -> float:
         pass
 
     @abstractmethod
