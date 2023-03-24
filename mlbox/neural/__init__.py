@@ -39,4 +39,5 @@ class FullyConnected(NeuralNetwork):
 
     @override
     def forward(self, x: Tensor) -> Tensor:
-        return self._network(x)
+        output: Tensor = self._network(x)
+        return output

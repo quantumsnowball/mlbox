@@ -24,7 +24,7 @@ Action = int
 Reward = float
 
 
-class Agent(DQNAgent):
+class MyAgent(DQNAgent):
     def __init__(self) -> None:
         super().__init__()
         self._policy = FullyConnected(1, 2).to(self._device)
@@ -126,5 +126,5 @@ class Agent(DQNAgent):
             print(f'total_return = {total_return:.2%} [{i_eps+1} / {n_eps}]')
 
 
-agent = Agent()
+agent = MyAgent()
 agent.train()
