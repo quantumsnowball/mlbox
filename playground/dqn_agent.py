@@ -69,7 +69,7 @@ class MyAgent(DQNAgent[State, Action, Reward]):
                     next_state=my.memory['state'][2][-1],
                     done=False,
                 )
-                self._replay.remember(exp)
+                self.remember(exp)
             except IndexError:
                 pass
 

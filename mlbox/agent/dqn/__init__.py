@@ -23,6 +23,7 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
                  **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._replay = Replay[T_State, T_Action, T_Reward](replay_size)
+        self.remember = self._replay.remember
 
     #
     # props
