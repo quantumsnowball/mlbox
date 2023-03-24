@@ -50,7 +50,7 @@ class MyAgent(DQNAgent[State, Action, Reward]):
     # training
     #
 
-    def research(self):
+    def research(self) -> float:
         def pnl_ratio(win: Series) -> float:
             pnlr = Series(win.rank(pct=True))
             return float(pnlr[-1])
@@ -92,14 +92,22 @@ class MyAgent(DQNAgent[State, Action, Reward]):
         return t.portfolio.metrics.total_return
 
     def train(self,
-              n_eps: int = 1000):
+              n_eps: int = 1000,
+              *,
+              update_target_every: int = 10,
+              report_progress_every: int = 1,
+              result_tag: str = 'Result'):
         '''run trade simulation trades, save to replay, then learn'''
         for i_eps in range(n_eps):
-            total_return = self.research()
+            result = self.research()
             self.learn()
-            if i_eps % 50 == 0:
+            if i_eps % update_target_every == 0:
                 self.update_target()
-            print(f'total_return = {total_return:.2%} [{i_eps+1} / {n_eps}]')
+            if i_eps % report_progress_every == 0:
+                print(
+                    f'{result_tag} = {result:.2%} '
+                    f'[{i_eps+1} / {n_eps}]'
+                )
 
 
 agent = MyAgent()
