@@ -33,3 +33,14 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
     @policy.setter
     def policy(self, policy: Module) -> None:
         self._policy = policy
+
+    @property
+    def target(self) -> Module:
+        try:
+            return self._target
+        except AttributeError:
+            raise NotImplementedError('target') from None
+
+    @target.setter
+    def target(self, target: Module) -> None:
+        self._target = target

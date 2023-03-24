@@ -36,7 +36,7 @@ class MyAgent(DQNAgent):
     def __init__(self) -> None:
         super().__init__()
         self.policy = FullyConnected(1, 2).to(self.device)
-        self._target = FullyConnected(1, 2).to(self.device)
+        self.target = FullyConnected(1, 2).to(self.device)
         self.update_target()
         self._optimizer = torch.optim.SGD(self.policy.parameters(),
                                           lr=1e-3)
@@ -60,7 +60,7 @@ class MyAgent(DQNAgent):
     #
 
     def update_target(self) -> None:
-        self._target.load_state_dict(self.policy.state_dict())
+        self.target.load_state_dict(self.policy.state_dict())
 
     def learn(self,
               epochs: int = 1000,
@@ -76,7 +76,7 @@ class MyAgent(DQNAgent):
             next_states = torch.tensor(batch.next_states,
                                        dtype=torch.float32).to(self.device)
             self.policy.train()
-            y = rewards + gamma*self._target(next_states)
+            y = rewards + gamma*self.target(next_states)
             X = states
             pred = self.policy(X)
             loss = self._loss_fn(pred, y)
