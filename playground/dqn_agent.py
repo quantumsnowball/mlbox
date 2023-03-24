@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from pandas import Series, Timestamp, to_datetime
+from pandas import Series
 from torch import nn, tensor
 from trbox.broker.paper import PaperEX
 from trbox.event.market import OhlcvWindow
@@ -10,7 +10,7 @@ from trbox.strategy.context import Context
 from trbox.trader import Trader
 
 from mlbox.agent.dqn import DQNAgent
-from mlbox.agent.memory import Experience, Replay
+from mlbox.agent.memory import Experience
 from mlbox.neural import FullyConnected
 
 SYMBOL = 'BTC-USD'
@@ -27,7 +27,6 @@ Reward = float
 class Agent(DQNAgent):
     def __init__(self) -> None:
         super().__init__()
-        self._replay = Replay[State, Action, Reward](10000)
         self._policy = FullyConnected(1, 2).to(self._device)
         self._target = FullyConnected(1, 2).to(self._device)
         self.update_target()
