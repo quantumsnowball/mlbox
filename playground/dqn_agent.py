@@ -26,7 +26,7 @@ Reward = float
 
 class Agent(DQNAgent):
     def __init__(self) -> None:
-        self._device = 'cuda'
+        super().__init__()
         self._replay = Replay[State, Action, Reward](10000)
         self._policy = FullyConnected(1, 2).to(self._device)
         self._target = FullyConnected(1, 2).to(self._device)

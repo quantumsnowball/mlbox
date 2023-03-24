@@ -1,13 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Generic, Literal, TypeVar
 
 T_State = TypeVar('T_State')
 T_Action = TypeVar('T_Action')
 
 
 class Agent(ABC, Generic[T_State, T_Action]):
-    def __init__(self) -> None:
-        pass
+    def __init__(self,
+                 *,
+                 device: Literal['cuda', 'cpu'] = 'cuda') -> None:
+        self._device = device
 
     #
     # acting
