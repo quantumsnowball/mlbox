@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+from gymnasium import Space
+from gymnasium.spaces import Box, Discrete
 from pandas import Series
 from torch import nn, tensor
 from trbox.broker.paper import PaperEX
@@ -8,6 +10,7 @@ from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
 from trbox.strategy import Strategy
 from trbox.strategy.context import Context
 from trbox.trader import Trader
+from typing_extensions import override
 
 from mlbox.agent.dqn import DQNAgent
 from mlbox.agent.memory import Experience
@@ -19,12 +22,18 @@ START = '2018-01-01'
 END = '2018-12-31'
 LENGTH = 200
 
+# what agent can observe
 State = tuple[float, ]
+# what agent will do
 Action = int
+# what agent will get
 Reward = float
 
 
 class MyAgent(DQNAgent):
+    action_space = Discrete(2)
+    observation_space = Box(low=0, high=1, shape=(1,))
+
     def __init__(self) -> None:
         super().__init__()
         self._policy = FullyConnected(1, 2).to(self._device)
@@ -43,9 +52,10 @@ class MyAgent(DQNAgent):
                *,
                epilson: float = 0.5) -> Action:
         if np.random.random() > epilson:
-            return int(np.random.choice([0, 1]))
+            return self.action_space.sample()
         else:
             return int(torch.argmax(self._policy(tensor([state, ]).to(self._device))))
+
     #
     # training
     #
