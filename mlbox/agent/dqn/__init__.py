@@ -1,8 +1,10 @@
-import numpy as np
-import torch
 from typing import Any, TypeVar
 
+import numpy as np
+import torch
 from torch.nn import Module
+from torch.optim import Optimizer
+from typing_extensions import override
 
 from mlbox.agent import Agent
 from mlbox.agent.memory import Replay
@@ -19,7 +21,6 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
                  **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._replay = Replay[T_State, T_Action, T_Reward](replay_size)
-        self._policy: Module
 
     #
     # props
@@ -47,6 +48,17 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
     def target(self, target: Module) -> None:
         self._target = target
 
+    @property
+    def optimizer(self) -> Optimizer:
+        try:
+            return self._optimizer
+        except AttributeError:
+            raise NotImplementedError('optimizer') from None
+
+    @optimizer.setter
+    def optimizer(self, optimizer: Optimizer) -> None:
+        self._optimizer = optimizer
+
     #
     # operations
     #
@@ -59,6 +71,7 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
     # acting
     #
 
+    @override
     def decide(self,
                state: T_State,
                *,

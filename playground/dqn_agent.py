@@ -3,7 +3,7 @@ import numpy.typing as npt
 import torch
 from gymnasium.spaces import Box, Discrete
 from pandas import Series
-from torch import nn, tensor
+from torch import nn
 from trbox.broker.paper import PaperEX
 from trbox.event.market import OhlcvWindow
 from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
@@ -42,8 +42,8 @@ class MyAgent(DQNAgent[State, Action, Reward]):
         self.policy = FullyConnected(1, 2).to(self.device)
         self.target = FullyConnected(1, 2).to(self.device)
         self.update_target()
-        self._optimizer = torch.optim.SGD(self.policy.parameters(),
-                                          lr=1e-3)
+        self.optimizer = torch.optim.SGD(self.policy.parameters(),
+                                         lr=1e-3)
         self._loss_fn = nn.CrossEntropyLoss()
 
     #
@@ -68,9 +68,9 @@ class MyAgent(DQNAgent[State, Action, Reward]):
             X = states
             pred = self.policy(X)
             loss = self._loss_fn(pred, y)
-            self._optimizer.zero_grad()
+            self.optimizer.zero_grad()
             loss.backward()
-            self._optimizer.step()
+            self.optimizer.step()
 
     def explore(self):
         def pnl_ratio(win: Series) -> float:
