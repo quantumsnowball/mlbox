@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, TypeVar
 
 import numpy as np
@@ -112,7 +113,8 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
               *,
               update_target_every: int = 10,
               report_progress_every: int = 1,
-              tracing: str = 'total_return') -> None:
+              tracing: str = 'total_return',
+              **kwargs: Any) -> None:
         for i_eps in range(n_eps):
             self.progress = min(max(i_eps/n_eps, 0), 1)
             # create a new environment
@@ -120,13 +122,13 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
             # run the env
             self.env.run()
             # learn from experience replay
-            self.learn()
+            self.learn(**kwargs)
             result = getattr(self.env.portfolio.metrics, tracing, float('nan'))
             if i_eps % update_target_every == 0:
                 self.update_target()
             if i_eps % report_progress_every == 0:
                 print(
-                    f'{tracing} = {result:.4f} '
+                    f'{tracing} = {result:+.4f} '
                     f'[{i_eps+1} / {n_eps}]'
                 )
 
@@ -156,3 +158,22 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
             return self.explore()
         else:
             return self.exploit(state)
+
+    #
+    # I/O
+    #
+
+    @override
+    def load(self,
+             path: Path | str) -> None:
+        path = Path(path)
+        self.policy.load_state_dict(torch.load(path))
+        self.update_target()
+        print(f'Loaded model: {path}')
+
+    @override
+    def save(self,
+             path: Path | str) -> None:
+        path = Path(path)
+        torch.save(self.policy.state_dict(), path)
+        print(f'Saved model: {path}')

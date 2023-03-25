@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Generic, Literal, Self, TypeVar
 
 from gymnasium import Space
@@ -97,4 +98,18 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
     def train(self,
               n_eps: int) -> None:
         ''' train an agent to learn through all necessary steps '''
+        ...
+
+    #
+    # I/O
+    #
+
+    @abstractmethod
+    def load(self,
+             path: Path | str) -> None:
+        ...
+
+    @abstractmethod
+    def save(self,
+             path: Path | str) -> None:
         ...
