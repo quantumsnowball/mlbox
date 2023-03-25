@@ -27,7 +27,7 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
 
     def __init__(self) -> None:
         super().__init__()
-        self.progress = 0
+        self.progress = 0.0
     #
     # env
     #
@@ -38,15 +38,18 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
         ...
 
     def reset(self) -> None:
+        ''' calling self.make() to reset self.env to a new one '''
         self.env = self.make()
 
     @property
     @abstractmethod
     def explorer(self) -> Hook:
+        ''' factory method to create the Hook for the Trader env '''
         ...
 
     @property
     def env(self) -> Trader:
+        ''' Trader as env '''
         try:
             return self._env
         except AttributeError:
@@ -62,17 +65,20 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
 
     @abstractmethod
     def explore(self) -> T_Action:
+        ''' take a random action '''
         ...
 
     @abstractmethod
     def exploit(self, state: T_State) -> T_Action:
+        ''' take an action decided by the policy '''
         ...
 
     @abstractmethod
     def decide(self,
                state: T_State,
                *,
-               epilson: float = 0.5) -> T_Action:
+               epilson: float) -> T_Action:
+        ''' explore or exploit an action base on epsilon greedy algorithm '''
         ...
 
     #
@@ -81,12 +87,14 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
 
     @abstractmethod
     def learn(self,
-              epochs: int = 1000,
-              batch_size: int = 512,
-              gamma: float = 0.99) -> None:
+              epochs: int,
+              batch_size: int,
+              gamma: float) -> None:
+        ''' learn from replay experience '''
         ...
 
     @abstractmethod
     def train(self,
-              n_eps: int = 1000) -> None:
+              n_eps: int) -> None:
+        ''' train an agent to learn through all necessary steps '''
         ...

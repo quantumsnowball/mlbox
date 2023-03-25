@@ -86,7 +86,6 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
               epochs: int = 1000,
               batch_size: int = 512,
               gamma: float = 0.99) -> None:
-        '''learn from reply memory'''
         for _ in range(epochs):
             # prepare batch of experience
             batch = self._replay.sample(batch_size)
@@ -114,7 +113,6 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
               update_target_every: int = 10,
               report_progress_every: int = 1,
               tracing: str = 'total_return') -> None:
-        '''run trade simulation trades, save to replay, then learn'''
         for i_eps in range(n_eps):
             self.progress = min(max(i_eps/n_eps, 0), 1)
             # create a new environment
@@ -154,7 +152,6 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
                state: T_State,
                *,
                epilson: float = 0.5) -> T_Action:
-        '''Keep epilson low to explore more'''
         if np.random.random() > epilson:
             return self.explore()
         else:

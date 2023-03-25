@@ -66,8 +66,6 @@ class MyAgent(DQNAgent[State, Action, Reward]):
     def explorer(self) -> Hook:
         # on step, save to replay memory
         def step(my: Context[OhlcvWindow]):
-            if my.count.beginning:
-                print(f'progress = {self.progress}')
             if my.count.every(INTERVAL):
                 # observe
                 win = my.event.win['Close']
