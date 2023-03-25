@@ -26,6 +26,7 @@ LENGTH = 200
 INTERVAL = 5
 STEP = 0.2
 START_LV = 0.5
+N_FEATURE = 10
 MODEL_PATH = Path('model.pth')
 
 #
@@ -43,7 +44,7 @@ Reward = np.float32
 class MyAgent(DQNAgent[Obs, Action, Reward]):
     device = 'cuda'
     # some normalized indicator, e.g. pnl-ratio percentage
-    obs_space = Box(low=0, high=1, shape=(1,), )
+    obs_space = Box(low=0, high=1, shape=(N_FEATURE, ), )
     in_dim = obs_space.shape[0]
     # 0 = no position, 1 = full position
     action_space = Discrete(3)
@@ -80,7 +81,7 @@ class MyAgent(DQNAgent[Obs, Action, Reward]):
                 # observe
                 win = my.event.win['Close']
                 pnlr = pnl_ratio(win)
-                feature = [pnlr, ]
+                feature = pnlr.iloc[-N_FEATURE:].values
                 obs = np.array([feature, ], dtype=np.float32)
                 # take action
                 action = self.decide(obs, epilson=self.progress)
@@ -89,7 +90,8 @@ class MyAgent(DQNAgent[Obs, Action, Reward]):
                                      low=-1, high=+1)
                 my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
                 # collect experience
-                reward = np.float32(my.portfolio.leverage)
+                eq = my.portfolio.dashboard.equity
+                reward = -np.float32(eq[-1] / eq[-2] - 1)
                 self.remember(obs, action, reward)
 
         return step
@@ -106,7 +108,7 @@ if MODEL_PATH.is_file():
 if input(f'Start training the agent? ([y]/n) ').upper() != 'N':
     # train agent
     agent.train(update_target_every=5,
-                n_eps=50,
+                n_eps=25,
                 epochs=500)
     if input(f'Save model? [y]/n) ').upper() != 'N':
         agent.save(MODEL_PATH)
@@ -128,7 +130,7 @@ def agent_step(my: Context[OhlcvWindow]):
         # observe
         win = my.event.win['Close']
         pnlr = pnl_ratio(win)
-        feature = [pnlr, ]
+        feature = pnlr.iloc[-N_FEATURE:].values
         obs = np.array([feature, ], dtype=np.float32)
         # take action
         action = agent.exploit(obs)
@@ -137,7 +139,7 @@ def agent_step(my: Context[OhlcvWindow]):
                              low=-1, high=+1)
         my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
         # mark
-        my.mark['pnlr-raw'] = pnl_ratio(win)
+        my.mark['pnlr-raw'] = pnl_ratio(win)[-1]
         my.mark['action'] = action.item()
         my.mark['delta_weight'] = delta_weight
         my.mark['target_weight'] = target_weight
