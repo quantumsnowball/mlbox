@@ -42,15 +42,17 @@ Reward = np.float32
 
 class MyAgent(DQNAgent[State, Action, Reward]):
     device = 'cuda'
-    # 0 = no position, 1 = full position
-    action_space = Discrete(3, start=-1)
     # some normalized indicator, e.g. pnl-ratio percentage
     observation_space = Box(low=0, high=1, shape=(1,), )
+    in_dim = observation_space.shape[0]
+    # 0 = no position, 1 = full position
+    action_space = Discrete(3)
+    out_dim = action_space.n.item()
 
     def __init__(self) -> None:
         super().__init__()
-        self.policy = FullyConnected(1, 2).to(self.device)
-        self.target = FullyConnected(1, 2).to(self.device)
+        self.policy = FullyConnected(self.in_dim, self.out_dim).to(self.device)
+        self.target = FullyConnected(self.in_dim, self.out_dim).to(self.device)
         self.update_target()
         self.optimizer = torch.optim.SGD(self.policy.parameters(),
                                          lr=1e-3)
@@ -82,7 +84,7 @@ class MyAgent(DQNAgent[State, Action, Reward]):
                 state = np.array([feature, ], dtype=np.float32)
                 # take action
                 action = self.decide(state, epilson=self.progress)
-                delta_weight = +STEP * int(action)
+                delta_weight = +STEP * (action.item() - 1)
                 target_weight = crop(my.portfolio.leverage + delta_weight,
                                      low=-1, high=+1)
                 my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
@@ -129,14 +131,14 @@ def agent_step(my: Context[OhlcvWindow]):
         feature = [pnlr, ]
         state = np.array([feature, ], dtype=np.float32)
         # take action
-        action = int(agent.exploit(state))
-        delta_weight = +STEP * action
+        action = agent.exploit(state)
+        delta_weight = +STEP * (action.item() - 1)
         target_weight = crop(my.portfolio.leverage + delta_weight,
                              low=-1, high=+1)
         my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
         # mark
         my.mark['pnlr-raw'] = pnl_ratio(win)
-        my.mark['action'] = action
+        my.mark['action'] = action.item()
         my.mark['delta_weight'] = delta_weight
         my.mark['target_weight'] = target_weight
     my.mark['price'] = my.event.price
