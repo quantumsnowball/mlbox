@@ -6,21 +6,21 @@ from gymnasium import Space
 from trbox.strategy import Hook
 from trbox.trader import Trader
 
-T_State = TypeVar('T_State')
+T_Obs = TypeVar('T_Obs')
 T_Action = TypeVar('T_Action')
 T_Reward = TypeVar('T_Reward')
 
 
-class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
+class Agent(ABC, Generic[T_Obs, T_Action, T_Reward]):
     action_space: Space[T_Action]
-    observation_space: Space[T_State]
+    obs_space: Space[T_Obs]
     device: Literal['cuda', 'cpu', ]
 
     def __new__(cls) -> Self:
         try:
             # ensure attrs are implemented in subclass instance
             cls.action_space
-            cls.observation_space
+            cls.obs_space
             cls.device
             return super().__new__(cls)
         except AttributeError as e:
@@ -70,13 +70,13 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
         ...
 
     @abstractmethod
-    def exploit(self, state: T_State) -> T_Action:
+    def exploit(self, obs: T_Obs) -> T_Action:
         ''' take an action decided by the policy '''
         ...
 
     @abstractmethod
     def decide(self,
-               state: T_State,
+               obs: T_Obs,
                *,
                epilson: float) -> T_Action:
         ''' explore or exploit an action base on epsilon greedy algorithm '''

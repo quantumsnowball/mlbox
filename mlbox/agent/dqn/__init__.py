@@ -12,18 +12,18 @@ from typing_extensions import override
 from mlbox.agent import Agent
 from mlbox.agent.memory import Experience, Replay
 
-T_State = TypeVar('T_State')
+T_Obs = TypeVar('T_Obs')
 T_Action = TypeVar('T_Action')
 T_Reward = TypeVar('T_Reward')
 
 
-class DQNAgent(Agent[T_State, T_Action, T_Reward]):
+class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
     def __init__(self,
                  *args: Any,
                  replay_size: int = 10000,
                  **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._replay = Replay[T_State, T_Action, T_Reward](replay_size)
+        self._replay = Replay[T_Obs, T_Action, T_Reward](replay_size)
 
     #
     # props
@@ -78,19 +78,19 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
     #
 
     def remember(self,
-                 state: T_State,
+                 obs: T_Obs,
                  action: T_Action,
                  reward: T_Reward) -> None:
         # remember value if lag-1 exists
         try:
             self._replay.remember(
-                Experience[T_State, T_Action, T_Reward](
+                Experience[T_Obs, T_Action, T_Reward](
                     # lag-1 values
-                    state=self._prev_state,
+                    obs=self._prev_obs,
                     action=self._prev_action,
                     # current values
                     reward=reward,
-                    next_state=state,
+                    next_obs=obs,
                     done=False,
                 )
             )
@@ -98,7 +98,7 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
             pass
 
         # update lag-1 values
-        self._prev_state = state
+        self._prev_obs = obs
         self._prev_action = action
 
     def update_target(self) -> None:
@@ -113,17 +113,17 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
         for _ in range(epochs):
             # prepare batch of experience
             batch = self._replay.sample(batch_size)
-            states = tensor(batch.states,
+            obs = tensor(batch.obs,
+                         dtype=float32).to(self.device)
+            reward = tensor(batch.reward,
                             dtype=float32).to(self.device)
-            rewards = tensor(batch.rewards,
-                             dtype=float32).to(self.device)
-            next_states = tensor(batch.next_states,
-                                 dtype=float32).to(self.device)
+            next_obs = tensor(batch.next_obs,
+                              dtype=float32).to(self.device)
             # train mode
             self.policy.train()
             # calc features and targets
-            X = states
-            y = rewards + gamma*self.target(next_states)
+            X = obs
+            y = reward + gamma*self.target(next_obs)
             # back propagation
             predicted = self.policy(X)
             loss = self.loss_function(predicted, y)
@@ -165,22 +165,22 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
         return random_action
 
     @override
-    def exploit(self, state: T_State) -> T_Action:
+    def exploit(self, obs: T_Obs) -> T_Action:
         with torch.no_grad():
-            state_tensor = torch.tensor(state).to(self.device)
-            best_value_action = torch.argmax(self.policy(state_tensor))
+            obs_tensor = torch.tensor(obs).to(self.device)
+            best_value_action = torch.argmax(self.policy(obs_tensor))
             result: T_Action = best_value_action.cpu().numpy()
             return result
 
     @override
     def decide(self,
-               state: T_State,
+               obs: T_Obs,
                *,
                epilson: float = 0.5) -> T_Action:
         if np.random.random() > epilson:
             return self.explore()
         else:
-            return self.exploit(state)
+            return self.exploit(obs)
 
     #
     # I/O

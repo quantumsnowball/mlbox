@@ -33,18 +33,18 @@ MODEL_PATH = Path('model.pth')
 #
 
 # what agent can observe
-State = npt.NDArray[np.float32]
+Obs = npt.NDArray[np.float32]
 # what agent will do
 Action = np.int64
 # what agent will get
 Reward = np.float32
 
 
-class MyAgent(DQNAgent[State, Action, Reward]):
+class MyAgent(DQNAgent[Obs, Action, Reward]):
     device = 'cuda'
     # some normalized indicator, e.g. pnl-ratio percentage
-    observation_space = Box(low=0, high=1, shape=(1,), )
-    in_dim = observation_space.shape[0]
+    obs_space = Box(low=0, high=1, shape=(1,), )
+    in_dim = obs_space.shape[0]
     # 0 = no position, 1 = full position
     action_space = Discrete(3)
     out_dim = action_space.n.item()
@@ -81,16 +81,16 @@ class MyAgent(DQNAgent[State, Action, Reward]):
                 win = my.event.win['Close']
                 pnlr = pnl_ratio(win)
                 feature = [pnlr, ]
-                state = np.array([feature, ], dtype=np.float32)
+                obs = np.array([feature, ], dtype=np.float32)
                 # take action
-                action = self.decide(state, epilson=self.progress)
+                action = self.decide(obs, epilson=self.progress)
                 delta_weight = +STEP * (action.item() - 1)
                 target_weight = crop(my.portfolio.leverage + delta_weight,
                                      low=-1, high=+1)
                 my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
                 # collect experience
                 reward = np.float32(my.portfolio.leverage)
-                self.remember(state, action, reward)
+                self.remember(obs, action, reward)
 
         return step
 
@@ -129,9 +129,9 @@ def agent_step(my: Context[OhlcvWindow]):
         win = my.event.win['Close']
         pnlr = pnl_ratio(win)
         feature = [pnlr, ]
-        state = np.array([feature, ], dtype=np.float32)
+        obs = np.array([feature, ], dtype=np.float32)
         # take action
-        action = agent.exploit(state)
+        action = agent.exploit(obs)
         delta_weight = +STEP * (action.item() - 1)
         target_weight = crop(my.portfolio.leverage + delta_weight,
                              low=-1, high=+1)
