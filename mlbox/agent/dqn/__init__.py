@@ -10,7 +10,7 @@ from torch.optim import Optimizer
 from typing_extensions import override
 
 from mlbox.agent import Agent
-from mlbox.agent.memory import Replay
+from mlbox.agent.memory import Experience, Replay
 
 T_State = TypeVar('T_State')
 T_Action = TypeVar('T_Action')
@@ -24,7 +24,6 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
                  **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._replay = Replay[T_State, T_Action, T_Reward](replay_size)
-        self.remember = self._replay.remember
 
     #
     # props
@@ -77,6 +76,30 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
     #
     # training
     #
+
+    def remember(self,
+                 state: T_State,
+                 action: T_Action,
+                 reward: T_Reward) -> None:
+        # remember value if lag-1 exists
+        try:
+            self._replay.remember(
+                Experience[T_State, T_Action, T_Reward](
+                    # lag-1 values
+                    state=self._prev_state,
+                    action=self._prev_action,
+                    # current values
+                    reward=reward,
+                    next_state=state,
+                    done=False,
+                )
+            )
+        except AttributeError:
+            pass
+
+        # update lag-1 values
+        self._prev_state = state
+        self._prev_action = action
 
     def update_target(self) -> None:
         weights = self.policy.state_dict()

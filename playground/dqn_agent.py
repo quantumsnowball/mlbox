@@ -15,7 +15,6 @@ from trbox.trader import Trader
 from typing_extensions import override
 
 from mlbox.agent.dqn import DQNAgent
-from mlbox.agent.memory import Experience
 from mlbox.neural import FullyConnected
 from mlbox.utils import crop, pnl_ratio
 
@@ -80,29 +79,16 @@ class MyAgent(DQNAgent[State, Action, Reward]):
                 win = my.event.win['Close']
                 pnlr = pnl_ratio(win)
                 feature = [pnlr, ]
-                # take action
                 state = np.array([feature, ], dtype=np.float32)
-                action = int(self.decide(state, epilson=self.progress))
-                delta_weight = +STEP * action
+                # take action
+                action = self.decide(state, epilson=self.progress)
+                delta_weight = +STEP * int(action)
                 target_weight = crop(my.portfolio.leverage + delta_weight,
                                      low=-1, high=+1)
                 my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
                 # collect experience
-                my.memory['state'][2].append(state)
-                my.memory['action'][2].append(action)
-                my.memory['equity'][2].append(my.dashboard.equity[-1])
-                try:
-                    exp = Experience[State, Action, Reward](
-                        state=my.memory['state'][2][-2],
-                        action=my.memory['action'][2][-2],
-                        reward=(my.memory['equity'][2][-1] /
-                                my.memory['equity'][2][-2] - 1),
-                        next_state=my.memory['state'][2][-1],
-                        done=False,
-                    )
-                    self.remember(exp)
-                except IndexError:
-                    pass
+                reward = np.float32(my.portfolio.leverage)
+                self.remember(state, action, reward)
 
         return step
 
@@ -141,8 +127,8 @@ def agent_step(my: Context[OhlcvWindow]):
         win = my.event.win['Close']
         pnlr = pnl_ratio(win)
         feature = [pnlr, ]
-        # take action
         state = np.array([feature, ], dtype=np.float32)
+        # take action
         action = int(agent.exploit(state))
         delta_weight = +STEP * action
         target_weight = crop(my.portfolio.leverage + delta_weight,
