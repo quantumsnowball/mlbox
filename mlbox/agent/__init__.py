@@ -25,9 +25,20 @@ class Agent(ABC, Generic[T_State, T_Action, T_Reward]):
         except AttributeError as e:
             raise NotImplementedError(e.name) from None
 
+    def __init__(self) -> None:
+        super().__init__()
+        self.progress = 0
     #
-    # props
+    # env
     #
+
+    @abstractmethod
+    def make(self) -> Trader:
+        ''' create a new env '''
+        ...
+
+    def reset(self) -> None:
+        self.env = self.make()
 
     @property
     @abstractmethod

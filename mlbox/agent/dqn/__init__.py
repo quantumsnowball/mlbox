@@ -109,17 +109,21 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
             self.optimizer.step()
 
     def train(self,
-              n_eps: int = 1000,
+              n_eps: int = 100,
               *,
               update_target_every: int = 10,
               report_progress_every: int = 1,
               tracing: str = 'total_return') -> None:
         '''run trade simulation trades, save to replay, then learn'''
         for i_eps in range(n_eps):
-            # result = self.research()
+            self.progress = min(max(i_eps/n_eps, 0), 1)
+            # create a new environment
+            self.reset()
+            # run the env
             self.env.run()
-            result = getattr(self.env.portfolio.metrics, tracing, float('nan'))
+            # learn from experience replay
             self.learn()
+            result = getattr(self.env.portfolio.metrics, tracing, float('nan'))
             if i_eps % update_target_every == 0:
                 self.update_target()
             if i_eps % report_progress_every == 0:
@@ -150,6 +154,7 @@ class DQNAgent(Agent[T_State, T_Action, T_Reward]):
                state: T_State,
                *,
                epilson: float = 0.5) -> T_Action:
+        '''Keep epilson low to explore more'''
         if np.random.random() > epilson:
             return self.explore()
         else:

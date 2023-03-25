@@ -47,7 +47,10 @@ class MyAgent(DQNAgent[State, Action, Reward]):
         self.optimizer = torch.optim.SGD(self.policy.parameters(),
                                          lr=1e-3)
         self.loss_function = nn.CrossEntropyLoss()
-        self.env = Trader(
+
+    @override
+    def make(self) -> Trader:
+        return Trader(
             strategy=Strategy(name='agent')
             .on(SYMBOL, OhlcvWindow, do=self.explorer),
             market=YahooHistoricalWindows(
@@ -63,6 +66,8 @@ class MyAgent(DQNAgent[State, Action, Reward]):
     def explorer(self) -> Hook:
         # on step, save to replay memory
         def step(my: Context[OhlcvWindow]):
+            if my.count.beginning:
+                print(f'progress = {self.progress}')
             if my.count.every(INTERVAL):
                 # observe
                 win = my.event.win['Close']
@@ -70,7 +75,7 @@ class MyAgent(DQNAgent[State, Action, Reward]):
                 feature = [pnlr, ]
                 # take action
                 state = np.array([feature, ], dtype=np.float32)
-                action = self.decide(state)
+                action = self.decide(state, epilson=self.progress)
                 my.portfolio.rebalance(SYMBOL, float(action), my.event.price)
                 # collect experience
                 my.memory['state'][2].append(state)
