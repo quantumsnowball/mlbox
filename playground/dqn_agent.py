@@ -17,7 +17,7 @@ from typing_extensions import override
 from mlbox.agent.dqn import DQNAgent
 from mlbox.agent.memory import Experience
 from mlbox.neural import FullyConnected
-from mlbox.utils import pnl_ratio
+from mlbox.utils import crop, pnl_ratio
 
 SYMBOL = 'BTC-USD'
 SYMBOLS = (SYMBOL, )
@@ -63,10 +63,7 @@ class MyAgent(DQNAgent[State, Action, Reward]):
             strategy=Strategy(name='Env')
             .on(SYMBOL, OhlcvWindow, do=self.explorer),
             market=YahooHistoricalWindows(
-                symbols=SYMBOLS,
-                start=START,
-                end=END,
-                length=LENGTH),
+                symbols=SYMBOLS, start=START, end=END, length=LENGTH),
             broker=PaperEX(SYMBOLS)
         )
 
@@ -87,8 +84,8 @@ class MyAgent(DQNAgent[State, Action, Reward]):
                 state = np.array([feature, ], dtype=np.float32)
                 action = int(self.decide(state, epilson=self.progress))
                 delta_weight = +STEP * action
-                target_weight = max(min(
-                    my.portfolio.leverage + delta_weight, 1), 0)
+                target_weight = crop(my.portfolio.leverage + delta_weight,
+                                     low=-1, high=+1)
                 my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
                 # collect experience
                 my.memory['state'][2].append(state)
@@ -148,8 +145,8 @@ def agent_step(my: Context[OhlcvWindow]):
         state = np.array([feature, ], dtype=np.float32)
         action = int(agent.exploit(state))
         delta_weight = +STEP * action
-        target_weight = max(min(
-            my.portfolio.leverage + delta_weight, 1), 0)
+        target_weight = crop(my.portfolio.leverage + delta_weight,
+                             low=-1, high=+1)
         my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
         # mark
         my.mark['pnlr-raw'] = pnl_ratio(win)
@@ -164,20 +161,14 @@ bt = Backtest(
         strategy=Strategy(name='Benchmark')
         .on(SYMBOL, OhlcvWindow, do=benchmark_step),
         market=YahooHistoricalWindows(
-            symbols=SYMBOLS,
-            start=START,
-            end=END,
-            length=LENGTH),
+            symbols=SYMBOLS, start=START, end=END, length=LENGTH),
         broker=PaperEX(SYMBOLS)
     ),
     Trader(
         strategy=Strategy(name='Agent')
         .on(SYMBOL, OhlcvWindow, do=agent_step),
         market=YahooHistoricalWindows(
-            symbols=SYMBOLS,
-            start=START,
-            end=END,
-            length=LENGTH),
+            symbols=SYMBOLS, start=START, end=END, length=LENGTH),
         broker=PaperEX(SYMBOLS)
     )
 )
