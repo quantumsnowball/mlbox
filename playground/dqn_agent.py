@@ -16,7 +16,7 @@ from typing_extensions import override
 
 from mlbox.agent.dqn import DQNAgent
 from mlbox.neural import FullyConnected
-from mlbox.utils import crop, pnl_ratio
+from mlbox.utils import crop
 
 SYMBOL = 'BTC-USD'
 SYMBOLS = (SYMBOL, )
@@ -26,7 +26,7 @@ LENGTH = 200
 INTERVAL = 5
 STEP = 0.2
 START_LV = 0.5
-N_FEATURE = 10
+N_FEATURE = LENGTH-1
 MODEL_PATH = Path('model.pth')
 
 Obs = npt.NDArray[np.float32]
@@ -46,8 +46,10 @@ def Env(name: str, do: Hook[OhlcvWindow]) -> Trader:
 
 def observe(my: Context[OhlcvWindow]) -> Obs:
     win = my.event.win['Close']
-    pnlr = pnl_ratio(win)
-    feature = pnlr.iloc[-N_FEATURE:].values
+    pct_chg = win.pct_change().dropna()
+    # pnlr = pnl_ratio(win)
+    # feature = pnlr.iloc[-N_FEATURE:].values
+    feature = np.array(pct_chg[-N_FEATURE:])
     obs = np.array([feature, ], dtype=np.float32)
     return obs
 
@@ -58,6 +60,15 @@ def act(my: Context[OhlcvWindow], action: Action) -> tuple[float, float]:
                          low=-1, high=+1)
     my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
     return delta_weight, target_weight
+
+
+def grant(my: Context[OhlcvWindow]) -> Reward:
+    eq = my.portfolio.dashboard.equity
+    eq_r = np.float32(eq[-1] / eq[-INTERVAL] - 1)
+    pr = my.memory['price'][INTERVAL]
+    pr_r = np.float32(pr[-1] / pr[-INTERVAL] - 1)
+    reward = eq_r - pr_r
+    return reward
 
 
 #
@@ -95,6 +106,7 @@ class MyAgent(DQNAgent[Obs, Action, Reward]):
     def explorer(self) -> Hook:
         # on step, save to replay memory
         def step(my: Context[OhlcvWindow]):
+            my.memory['price'][INTERVAL].append(my.event.price)
             if my.count.beginning:
                 # starts with half position
                 my.portfolio.rebalance(SYMBOL, START_LV, my.event.price)
@@ -105,8 +117,7 @@ class MyAgent(DQNAgent[Obs, Action, Reward]):
                 action = self.decide(obs, epsilon=self.progress)
                 act(my, action)
                 # collect experience
-                eq = my.portfolio.dashboard.equity
-                reward = -np.float32(eq[-1] / eq[-2] - 1)
+                reward = grant(my)
                 self.remember(obs, action, reward)
 
         return step
@@ -128,6 +139,7 @@ def benchmark_step(my: Context[OhlcvWindow]):
 
 
 def agent_step(my: Context[OhlcvWindow]):
+    my.memory['price'][INTERVAL].append(my.event.price)
     if my.count.beginning:
         # starts with half position
         my.portfolio.rebalance(SYMBOL, START_LV, my.event.price)
@@ -142,6 +154,8 @@ def agent_step(my: Context[OhlcvWindow]):
         my.mark['action'] = action.item()
         my.mark['delta_weight'] = delta_weight
         my.mark['target_weight'] = target_weight
+        my.mark['reward'] = grant(my)
+        my.mark['cum_reward'] = sum(my.mark['reward'])
     my.mark['price'] = my.event.price
 
 
