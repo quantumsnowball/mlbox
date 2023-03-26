@@ -29,11 +29,8 @@ START_LV = 0.5
 N_FEATURE = 10
 MODEL_PATH = Path('model.pth')
 
-# what agent can observe
 Obs = npt.NDArray[np.float32]
-# what agent will do
 Action = np.int64
-# what agent will get
 Reward = np.float32
 
 
@@ -105,7 +102,7 @@ class MyAgent(DQNAgent[Obs, Action, Reward]):
                 # observe
                 obs = observe(my)
                 # take action
-                action = self.decide(obs, epilson=self.progress)
+                action = self.decide(obs, epsilon=self.progress)
                 act(my, action)
                 # collect experience
                 eq = my.portfolio.dashboard.equity

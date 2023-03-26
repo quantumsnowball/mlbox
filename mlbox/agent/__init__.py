@@ -78,7 +78,7 @@ class Agent(ABC, Generic[T_Obs, T_Action, T_Reward]):
     def decide(self,
                obs: T_Obs,
                *,
-               epilson: float) -> T_Action:
+               epsilon: float) -> T_Action:
         ''' explore or exploit an action base on epsilon greedy algorithm '''
         ...
 

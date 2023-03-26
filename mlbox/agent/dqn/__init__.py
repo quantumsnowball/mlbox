@@ -208,8 +208,8 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
     def decide(self,
                obs: T_Obs,
                *,
-               epilson: float = 0.5) -> T_Action:
-        if np.random.random() > epilson:
+               epsilon: float = 0.5) -> T_Action:
+        if np.random.random() > epsilon:
             return self.explore()
         else:
             return self.exploit(obs)
