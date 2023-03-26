@@ -29,16 +29,22 @@ START_LV = 0.5
 N_FEATURE = 10
 MODEL_PATH = Path('model.pth')
 
-#
-# Agent
-#
-
 # what agent can observe
 Obs = npt.NDArray[np.float32]
 # what agent will do
 Action = np.int64
 # what agent will get
 Reward = np.float32
+
+
+def Env(name: str, do: Hook[OhlcvWindow]) -> Trader:
+    return Trader(
+        strategy=Strategy(name=name)
+        .on(SYMBOL, OhlcvWindow, do=do),
+        market=YahooHistoricalWindows(
+            symbols=SYMBOLS, start=START, end=END, length=LENGTH),
+        broker=PaperEX(SYMBOLS)
+    )
 
 
 def observe(my: Context[OhlcvWindow]) -> Obs:
@@ -56,6 +62,10 @@ def act(my: Context[OhlcvWindow], action: Action) -> tuple[float, float]:
     my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
     return delta_weight, target_weight
 
+
+#
+# Agent
+#
 
 class MyAgent(DQNAgent[Obs, Action, Reward]):
     device = 'cuda'
@@ -77,13 +87,7 @@ class MyAgent(DQNAgent[Obs, Action, Reward]):
 
     @override
     def make(self) -> Trader:
-        return Trader(
-            strategy=Strategy(name='Env')
-            .on(SYMBOL, OhlcvWindow, do=self.explorer),
-            market=YahooHistoricalWindows(
-                symbols=SYMBOLS, start=START, end=END, length=LENGTH),
-            broker=PaperEX(SYMBOLS)
-        )
+        return Env('Env', self.explorer)
 
     @property
     @override
@@ -151,20 +155,8 @@ def agent_step(my: Context[OhlcvWindow]):
 
 
 bt = Backtest(
-    Trader(
-        strategy=Strategy(name='Benchmark')
-        .on(SYMBOL, OhlcvWindow, do=benchmark_step),
-        market=YahooHistoricalWindows(
-            symbols=SYMBOLS, start=START, end=END, length=LENGTH),
-        broker=PaperEX(SYMBOLS)
-    ),
-    Trader(
-        strategy=Strategy(name='Agent')
-        .on(SYMBOL, OhlcvWindow, do=agent_step),
-        market=YahooHistoricalWindows(
-            symbols=SYMBOLS, start=START, end=END, length=LENGTH),
-        broker=PaperEX(SYMBOLS)
-    )
+    Env('Benchmark', benchmark_step),
+    Env('Agent', agent_step)
 )
 bt.run()
 bt.result.save()
