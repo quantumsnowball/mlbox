@@ -1,13 +1,21 @@
 from abc import ABC, abstractmethod
-from typing import Any, Self, SupportsFloat, TypeVar
+from queue import Queue
+from threading import Thread
+from typing import Any, Generic, Self, SupportsFloat, TypeVar
 
-from gymnasium import Env, Space
+from gymnasium import Env
+from trbox.event.market import OhlcvWindow
+from trbox.strategy import Context, Hook
+from trbox.trader import Trader
 
 T_Obs = TypeVar('T_Obs')
 T_Action = TypeVar('T_Action')
+T_Reward = TypeVar('T_Reward')
 
 
-class TrEnv(Env[T_Obs, T_Action], ABC):
+class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
+    interval = 1
+
     def __new__(cls) -> Self:
         try:
             # ensure attrs are implemented in subclass instance
@@ -17,28 +25,52 @@ class TrEnv(Env[T_Obs, T_Action], ABC):
         except AttributeError as e:
             raise NotImplementedError(e.name) from None
 
-    def __init__(self,
-                 obs_space: Space[T_Obs],
-                 action_space: Space[T_Action]) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        TrEnv.observation_space = obs_space
-        TrEnv.action_space = action_space
+        self.obs_q = Queue[T_Obs](maxsize=1)
+        self.action_q = Queue[T_Action](maxsize=1)
+        self.reward_q = Queue[T_Reward](maxsize=1)
 
     @abstractmethod
-    def make(self):
+    def make(self) -> Trader:
         ...
 
     @abstractmethod
-    def observe(self):
+    def observe(self, my: Context[OhlcvWindow]) -> T_Obs:
         ...
 
     @abstractmethod
-    def act(self):
+    def act(self, my: Context[OhlcvWindow], action: T_Action) -> None:
         ...
 
     @abstractmethod
-    def grant(self):
+    def grant(self, my: Context[OhlcvWindow]) -> T_Reward:
         ...
+
+    def every(self, _: Context[OhlcvWindow]) -> None:
+        pass
+
+    def beginning(self, _: Context[OhlcvWindow]) -> None:
+        pass
+
+    @property
+    def do(self) -> Hook[OhlcvWindow]:
+        def do(my: Context[OhlcvWindow]) -> None:
+            self.every(my)
+            if my.count.beginning:
+                self.beginning(my)
+            elif my.count.every(self.interval):
+                # observe
+                obs = self.observe(my)
+                self.obs_q.put(obs)
+                # take action
+                action = self.action_q.get()
+                self.act(my, action)
+                # collect experience
+                reward = self.grant(my)
+                self.reward_q.put(reward)
+        return do
+
     #
     # gym.Env
     #
@@ -55,11 +87,17 @@ class TrEnv(Env[T_Obs, T_Action], ABC):
         4. set the signal by step() and continue the iteration
         reset() needs to integrated with trbox strategy heartbeat events sync
         '''
-        return tuple()
+        trader = self.make()
+        t = Thread(target=trader.run, daemon=True)
+        t.start()
+
+        obs = self.obs_q.get()
+        info = {}
+        return obs, info
 
     def step(self,
              action: T_Action) -> tuple[T_Obs,
-                                        SupportsFloat,
+                                        T_Reward,
                                         bool,
                                         bool,
                                         dict[str, Any]]:
@@ -71,7 +109,8 @@ class TrEnv(Env[T_Obs, T_Action], ABC):
         5. set the signal and return the result
         step() needs to integrated with trbox strategy heartbeat events sync
         '''
-        return tuple()
+        self.action_q.put(action)
 
-
-print('TrEnv hi!')
+        reward = self.reward_q.get()
+        obs = self.obs_q.get()
+        return obs, reward, False, False, {}
