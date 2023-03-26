@@ -69,6 +69,10 @@ def act(my: Context[OhlcvWindow], action: Action) -> tuple[float, float]:
 
 class MyAgent(DQNAgent[Obs, Action, Reward]):
     device = 'cuda'
+    update_target_every = 5
+    n_eps = 40
+    epochs = 500
+
     # some normalized indicator, e.g. pnl-ratio percentage
     obs_space = Box(low=0, high=1, shape=(N_FEATURE, ), )
     in_dim = obs_space.shape[0]

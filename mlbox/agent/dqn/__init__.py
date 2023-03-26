@@ -18,11 +18,26 @@ T_Reward = TypeVar('T_Reward')
 
 
 class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
+    # replay memory
+    replay_size = 10000
+    # learn
+    epochs = 1000
+    batch_size = 512
+    gamma = 0.99
+    # train
+    n_eps = 100
+    update_target_every = 10
+    report_progress_every = 1
+    tracing_metrics = 'total_return'
+
     def __init__(self,
                  *args: Any,
-                 replay_size: int = 10000,
+                 replay_size: int | None = None,
                  **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
+        if replay_size is None:
+            replay_size = self.replay_size
+
         self._replay = Replay[T_Obs, T_Action, T_Reward](replay_size)
 
     #
@@ -107,9 +122,16 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
 
     @override
     def learn(self,
-              epochs: int = 1000,
-              batch_size: int = 512,
-              gamma: float = 0.99) -> None:
+              epochs: int | None = None,
+              batch_size: int | None = None,
+              gamma: float | None = None) -> None:
+        if epochs is None:
+            epochs = self.epochs
+        if batch_size is None:
+            batch_size = self.batch_size
+        if gamma is None:
+            gamma = self.gamma
+
         for _ in range(epochs):
             # prepare batch of experience
             batch = self._replay.sample(batch_size)
@@ -132,12 +154,21 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
             self.optimizer.step()
 
     def train(self,
-              n_eps: int = 100,
+              n_eps: int | None = None,
               *,
-              update_target_every: int = 10,
-              report_progress_every: int = 1,
-              tracing: str = 'total_return',
+              update_target_every: int | None = None,
+              report_progress_every: int | None = None,
+              tracing_metrics: str | None = None,
               **kwargs: Any) -> None:
+        if n_eps is None:
+            n_eps = self.n_eps
+        if update_target_every is None:
+            update_target_every = self.update_target_every
+        if report_progress_every is None:
+            report_progress_every = self.report_progress_every
+        if tracing_metrics is None:
+            tracing_metrics = self.tracing_metrics
+
         for i_eps in range(n_eps):
             self.progress = min(max(i_eps/n_eps, 0), 1)
             # create a new environment
@@ -146,12 +177,13 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
             self.env.run()
             # learn from experience replay
             self.learn(**kwargs)
-            result = getattr(self.env.portfolio.metrics, tracing, float('nan'))
+            result = getattr(self.env.portfolio.metrics,
+                             tracing_metrics, float('nan'))
             if i_eps % update_target_every == 0:
                 self.update_target()
             if i_eps % report_progress_every == 0:
                 print(
-                    f'{tracing} = {result:+.4f} '
+                    f'{tracing_metrics} = {result:+.4f} '
                     f'[{i_eps+1} / {n_eps}]'
                 )
 
@@ -211,8 +243,6 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
                 self.load(path)
         if input(f'Start training the agent? ([y]/n) ').upper() != 'N':
             # train agent
-            self.train(update_target_every=5,
-                       n_eps=25,
-                       epochs=500)
+            self.train()
             if input(f'Save model? [y]/n) ').upper() != 'N':
                 self.save(path)
