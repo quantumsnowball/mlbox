@@ -21,7 +21,7 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
     # replay memory
     replay_size = 10000
     # learn
-    epochs = 1000
+    n_epoch = 1000
     batch_size = 512
     gamma = 0.99
     # train
@@ -122,17 +122,17 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
 
     @override
     def learn(self,
-              epochs: int | None = None,
+              n_epoch: int | None = None,
               batch_size: int | None = None,
               gamma: float | None = None) -> None:
-        if epochs is None:
-            epochs = self.epochs
+        if n_epoch is None:
+            n_epoch = self.n_epoch
         if batch_size is None:
             batch_size = self.batch_size
         if gamma is None:
             gamma = self.gamma
 
-        for _ in range(epochs):
+        for _ in range(n_epoch):
             # prepare batch of experience
             batch = self._replay.sample(batch_size)
             obs = tensor(batch.obs,

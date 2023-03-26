@@ -71,7 +71,7 @@ class MyAgent(DQNAgent[Obs, Action, Reward]):
     device = 'cuda'
     update_target_every = 5
     n_eps = 40
-    epochs = 500
+    n_epoch = 500
 
     # some normalized indicator, e.g. pnl-ratio percentage
     obs_space = Box(low=0, high=1, shape=(N_FEATURE, ), )

@@ -88,7 +88,7 @@ class Agent(ABC, Generic[T_Obs, T_Action, T_Reward]):
 
     @abstractmethod
     def learn(self,
-              epochs: int,
+              n_epoch: int,
               batch_size: int,
               gamma: float) -> None:
         ''' learn from replay experience '''
