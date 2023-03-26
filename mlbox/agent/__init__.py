@@ -113,3 +113,8 @@ class Agent(ABC, Generic[T_Obs, T_Action, T_Reward]):
     def save(self,
              path: Path | str) -> None:
         ...
+
+    @abstractmethod
+    def prompt(self,
+               path: Path | str) -> None:
+        ...

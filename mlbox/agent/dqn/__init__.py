@@ -200,3 +200,19 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
         path = Path(path)
         torch.save(self.policy.state_dict(), path)
         print(f'Saved model: {path}')
+
+    @override
+    def prompt(self,
+               path: Path | str) -> None:
+        path = Path(path)
+        if path.is_file():
+            if input(f'Model {path} exists, load? (y/[n]) ').upper() == 'Y':
+                # load agent
+                self.load(path)
+        if input(f'Start training the agent? ([y]/n) ').upper() != 'N':
+            # train agent
+            self.train(update_target_every=5,
+                       n_eps=25,
+                       epochs=500)
+            if input(f'Save model? [y]/n) ').upper() != 'N':
+                self.save(path)

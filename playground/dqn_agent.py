@@ -115,17 +115,7 @@ class MyAgent(DQNAgent[Obs, Action, Reward]):
 # model
 #
 agent = MyAgent()
-if MODEL_PATH.is_file():
-    if input(f'Model {MODEL_PATH} exists, load? (y/[n]) ').upper() == 'Y':
-        # load agent
-        agent.load(MODEL_PATH)
-if input(f'Start training the agent? ([y]/n) ').upper() != 'N':
-    # train agent
-    agent.train(update_target_every=5,
-                n_eps=25,
-                epochs=500)
-    if input(f'Save model? [y]/n) ').upper() != 'N':
-        agent.save(MODEL_PATH)
+agent.prompt(MODEL_PATH)
 
 
 #
