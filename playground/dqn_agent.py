@@ -25,7 +25,7 @@ END = '2020-12-31'
 LENGTH = 200
 INTERVAL = 5
 STEP = 0.2
-START_LV = 0.5
+START_LV = 0.01
 N_FEATURE = LENGTH-1
 MODEL_PATH = Path('model.pth')
 
@@ -64,8 +64,8 @@ def act(my: Context[OhlcvWindow], action: Action) -> tuple[float, float]:
 
 def grant(my: Context[OhlcvWindow]) -> Reward:
     eq = my.portfolio.dashboard.equity
-    eq_r = np.float32(eq[-1] / eq[-INTERVAL] - 1)
     pr = my.memory['price'][INTERVAL]
+    eq_r = np.float32(eq[-1] / eq[-INTERVAL] - 1)
     pr_r = np.float32(pr[-1] / pr[-INTERVAL] - 1)
     reward = eq_r - pr_r
     return reward
@@ -77,14 +77,17 @@ def grant(my: Context[OhlcvWindow]) -> Reward:
 
 class MyAgent(DQNAgent[Obs, Action, Reward]):
     device = 'cuda'
+    replay_size = 100
     update_target_every = 5
     n_eps = 40
     n_epoch = 500
+    gamma = 1.0
 
-    # some normalized indicator, e.g. pnl-ratio percentage
+    # obs
     obs_space = Box(low=0, high=1, shape=(N_FEATURE, ), )
     in_dim = obs_space.shape[0]
-    # 0 = no position, 1 = full position
+
+    # action
     action_space = Discrete(3)
     out_dim = action_space.n.item()
 
@@ -93,8 +96,8 @@ class MyAgent(DQNAgent[Obs, Action, Reward]):
         self.policy = FullyConnected(self.in_dim, self.out_dim).to(self.device)
         self.target = FullyConnected(self.in_dim, self.out_dim).to(self.device)
         self.update_target()
-        self.optimizer = torch.optim.SGD(self.policy.parameters(),
-                                         lr=1e-3)
+        self.optimizer = torch.optim.Adam(self.policy.parameters(),
+                                          lr=1e-3)
         self.loss_function = nn.CrossEntropyLoss()
 
     @override
