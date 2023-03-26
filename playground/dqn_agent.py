@@ -41,6 +41,22 @@ Action = np.int64
 Reward = np.float32
 
 
+def observe(my: Context[OhlcvWindow]) -> Obs:
+    win = my.event.win['Close']
+    pnlr = pnl_ratio(win)
+    feature = pnlr.iloc[-N_FEATURE:].values
+    obs = np.array([feature, ], dtype=np.float32)
+    return obs
+
+
+def act(my: Context[OhlcvWindow], action: Action) -> tuple[float, float]:
+    delta_weight = +STEP * (action.item() - 1)
+    target_weight = crop(my.portfolio.leverage + delta_weight,
+                         low=-1, high=+1)
+    my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
+    return delta_weight, target_weight
+
+
 class MyAgent(DQNAgent[Obs, Action, Reward]):
     device = 'cuda'
     # some normalized indicator, e.g. pnl-ratio percentage
@@ -79,16 +95,10 @@ class MyAgent(DQNAgent[Obs, Action, Reward]):
                 my.portfolio.rebalance(SYMBOL, START_LV, my.event.price)
             elif my.count.every(INTERVAL):
                 # observe
-                win = my.event.win['Close']
-                pnlr = pnl_ratio(win)
-                feature = pnlr.iloc[-N_FEATURE:].values
-                obs = np.array([feature, ], dtype=np.float32)
+                obs = observe(my)
                 # take action
                 action = self.decide(obs, epilson=self.progress)
-                delta_weight = +STEP * (action.item() - 1)
-                target_weight = crop(my.portfolio.leverage + delta_weight,
-                                     low=-1, high=+1)
-                my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
+                act(my, action)
                 # collect experience
                 eq = my.portfolio.dashboard.equity
                 reward = -np.float32(eq[-1] / eq[-2] - 1)
@@ -128,18 +138,12 @@ def agent_step(my: Context[OhlcvWindow]):
         my.portfolio.rebalance(SYMBOL, START_LV, my.event.price)
     elif my.count.every(INTERVAL):
         # observe
-        win = my.event.win['Close']
-        pnlr = pnl_ratio(win)
-        feature = pnlr.iloc[-N_FEATURE:].values
-        obs = np.array([feature, ], dtype=np.float32)
+        obs = observe(my)
         # take action
         action = agent.exploit(obs)
-        delta_weight = +STEP * (action.item() - 1)
-        target_weight = crop(my.portfolio.leverage + delta_weight,
-                             low=-1, high=+1)
-        my.portfolio.rebalance(SYMBOL, target_weight, my.event.price)
+        delta_weight, target_weight = act(my, action)
         # mark
-        my.mark['pnlr-raw'] = pnl_ratio(win)[-1]
+        # my.mark['pnlr-raw'] = pnl_ratio(win)[-1]
         my.mark['action'] = action.item()
         my.mark['delta_weight'] = delta_weight
         my.mark['target_weight'] = target_weight
