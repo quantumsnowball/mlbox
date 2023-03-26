@@ -47,8 +47,8 @@ model = nn.Sequential(
 optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
 
 # training
-epochs = 10
-for t in range(epochs):
+n_epoch = 10
+for t in range(n_epoch):
     print(f"Epoch {t+1}\n-------------------------------")
 
     for X, y in train_loader:

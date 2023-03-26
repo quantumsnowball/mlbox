@@ -54,9 +54,9 @@ class DeepLearner:
                                           lr=1e-3)
         self._device = device
 
-    def train(self, *, epochs: int = 5):
+    def train(self, *, n_epoch: int = 5):
         # epoch
-        for t in range(epochs):
+        for t in range(n_epoch):
             print(f"Epoch {t+1}\n-------------------------------")
 
             # batch
