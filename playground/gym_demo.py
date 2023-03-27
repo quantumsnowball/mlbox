@@ -13,12 +13,13 @@ from trbox.trader import Trader
 from typing_extensions import override
 
 from mlbox.trenv import TrEnv
+from mlbox.trenv.strategy import TrEnvStrategy
 from mlbox.utils import crop
 
 SYMBOL = 'BTC-USD'
 SYMBOLS = (SYMBOL, )
 START = '2020-01-01'
-END = '2020-01-05'
+END = '2020-12-31'
 LENGTH = 200
 INTERVAL = 1
 STEP = 0.2
@@ -69,7 +70,7 @@ class Env(TrEnv[Obs, Action, Reward]):
     @override
     def make(self) -> Trader:
         return Trader(
-            strategy=Strategy(name='TrEnv')
+            strategy=TrEnvStrategy(name='TrEnv', trenv=self)
             .on(SYMBOL, OhlcvWindow, do=self.do),
             market=YahooHistoricalWindows(
                 symbols=SYMBOLS, start=START, end=END, length=LENGTH),
@@ -77,14 +78,15 @@ class Env(TrEnv[Obs, Action, Reward]):
         )
 
 
-set_log_level('warning')
+# set_log_level('warning')
 env = Env()
 obs, *_ = env.reset()
 print(obs.shape)
 print('')
 while True:
     obs, reward, terminated, *_ = env.step(env.action_space.sample())
+    if terminated:
+        break
     print(obs.shape, reward, terminated)
-    # TODO how to break when terminated?
     print('')
     sleep(0)
