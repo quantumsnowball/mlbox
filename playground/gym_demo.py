@@ -1,4 +1,5 @@
 from pathlib import Path
+from time import sleep
 
 import numpy as np
 import numpy.typing as npt
@@ -17,7 +18,7 @@ from mlbox.utils import crop
 SYMBOL = 'BTC-USD'
 SYMBOLS = (SYMBOL, )
 START = '2020-01-01'
-END = '2020-12-31'
+END = '2020-01-05'
 LENGTH = 200
 INTERVAL = 1
 STEP = 0.2
@@ -76,11 +77,14 @@ class Env(TrEnv[Obs, Action, Reward]):
         )
 
 
-# set_log_level('debug')
+set_log_level('warning')
 env = Env()
 obs, *_ = env.reset()
 print(obs.shape)
+print('')
 while True:
-    obs, reward, *_ = env.step(env.action_space.sample())
-    print(obs.shape, reward)
+    obs, reward, terminated, *_ = env.step(env.action_space.sample())
+    print(obs.shape, reward, terminated)
     # TODO how to break when terminated?
+    print('')
+    sleep(0)

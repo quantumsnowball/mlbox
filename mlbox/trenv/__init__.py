@@ -4,6 +4,7 @@ from threading import Event, Thread
 from typing import Any, Generic, Self, SupportsFloat, TypeVar
 
 from gymnasium import Env
+from trbox.common.logger import Log
 from trbox.event.market import OhlcvWindow
 from trbox.strategy import Context, Hook
 from trbox.trader import Trader
@@ -65,11 +66,14 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
                 if self._ready.is_set():
                     reward = self.grant(my)
                     self.reward_q.put(reward)
+                    Log.warning('calced reward')
                 # observe
                 obs = self.observe(my)
                 self.obs_q.put(obs)
                 # take action
-                action = self.action_q.get()
+                Log.warning('waiting for action')
+                action = self.action_q.get()  # blocking
+                Log.warning('got action')
                 self.act(my, action)
         return do
 
@@ -93,11 +97,13 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
         self._trader = self.make()
         t = Thread(target=self._trader.run, daemon=True)
         t.start()
+        # wait for first obs
+        Log.info('waiting for obs')
+        obs = self.obs_q.get()
+        Log.info('got obs')
+        info = {}
         # set ready flag
         self._ready.set()
-        # wait for first obs
-        obs = self.obs_q.get()
-        info = {}
         # return
         return obs, info
 
@@ -111,8 +117,12 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
         # put the action
         self.action_q.put(action)
         # wait for reward
-        reward = self.reward_q.get()
+        Log.warning('waiting for reward')
+        reward = self.reward_q.get()  # blocking
+        Log.warning('got reward')
         # get obs
-        obs = self.obs_q.get()
+        Log.warning('waiting for obs')
+        obs = self.obs_q.get()  # blocking
+        Log.warning('got obs')
         # return
         return obs, reward, False, False, {}
