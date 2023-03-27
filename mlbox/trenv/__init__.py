@@ -27,9 +27,9 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
 
     def __init__(self) -> None:
         super().__init__()
-        self.obs_q = Queue[T_Obs](maxsize=1)
-        self.action_q = Queue[T_Action](maxsize=1)
-        self.reward_q = Queue[T_Reward](maxsize=1)
+        self.obs_q = Queue[T_Obs]()
+        self.action_q = Queue[T_Action]()
+        self.reward_q = Queue[T_Reward]()
         self._ready = Event()
 
     @abstractmethod
@@ -93,6 +93,8 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
         self._trader = self.make()
         t = Thread(target=self._trader.run, daemon=True)
         t.start()
+        # set ready flag
+        self._ready.set()
         # wait for first obs
         obs = self.obs_q.get()
         info = {}
@@ -105,8 +107,7 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
                                         bool,
                                         bool,
                                         dict[str, Any]]:
-        # begin stepping
-        self._ready.set()
+        assert self._ready.is_set(), 'Must call reset() first'
         # put the action
         self.action_q.put(action)
         # wait for reward

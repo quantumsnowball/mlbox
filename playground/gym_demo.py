@@ -1,10 +1,10 @@
-from trbox.common.logger import set_log_level
 from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 from gymnasium.spaces import Box, Discrete
 from trbox.broker.paper import PaperEX
+from trbox.common.logger import set_log_level
 from trbox.event.market import OhlcvWindow
 from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
 from trbox.strategy import Context, Strategy
@@ -19,7 +19,7 @@ SYMBOLS = (SYMBOL, )
 START = '2020-01-01'
 END = '2020-12-31'
 LENGTH = 200
-INTERVAL = 5
+INTERVAL = 1
 STEP = 0.2
 START_LV = 0.01
 N_FEATURE = LENGTH-1
@@ -30,7 +30,7 @@ Action = np.int64
 Reward = np.float32
 
 
-class Env(TrEnv):
+class Env(TrEnv[Obs, Action, Reward]):
     interval = INTERVAL
 
     # Env
@@ -76,6 +76,11 @@ class Env(TrEnv):
         )
 
 
-set_log_level('debug')
+# set_log_level('debug')
 env = Env()
-env.reset()
+obs, *_ = env.reset()
+print(obs.shape)
+while True:
+    obs, reward, *_ = env.step(env.action_space.sample())
+    print(obs.shape, reward)
+    # TODO how to break when terminated?
