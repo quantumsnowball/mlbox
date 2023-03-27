@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from queue import Queue
-from threading import Thread
+from threading import Event, Thread
 from typing import Any, Generic, Self, SupportsFloat, TypeVar
 
 from gymnasium import Env
@@ -30,6 +30,7 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
         self.obs_q = Queue[T_Obs](maxsize=1)
         self.action_q = Queue[T_Action](maxsize=1)
         self.reward_q = Queue[T_Reward](maxsize=1)
+        self._ready = Event()
 
     @abstractmethod
     def make(self) -> Trader:
@@ -60,15 +61,16 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
             if my.count.beginning:
                 self.beginning(my)
             elif my.count.every(self.interval):
+                # collect experience if step
+                if self._ready.is_set():
+                    reward = self.grant(my)
+                    self.reward_q.put(reward)
                 # observe
                 obs = self.observe(my)
                 self.obs_q.put(obs)
                 # take action
                 action = self.action_q.get()
                 self.act(my, action)
-                # collect experience
-                reward = self.grant(my)
-                self.reward_q.put(reward)
         return do
 
     #
@@ -80,19 +82,21 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
               seed: int | None = None,
               options: dict[str, Any] | None = None) -> tuple[T_Obs,
                                                               dict[str, Any]]:
-        '''
-        1. create a Trader, may be using make()
-        2. start the Trader and run the first iteration until a heartbeat signal
-        3. intercept observe() and get the first observation
-        4. set the signal by step() and continue the iteration
-        reset() needs to integrated with trbox strategy heartbeat events sync
-        '''
-        trader = self.make()
-        t = Thread(target=trader.run, daemon=True)
+        # close old env if exists
+        try:
+            self._trader.stop()
+        except AttributeError:
+            pass
+        # clear flag until first step
+        self._ready.clear()
+        # create env
+        self._trader = self.make()
+        t = Thread(target=self._trader.run, daemon=True)
         t.start()
-
+        # wait for first obs
         obs = self.obs_q.get()
         info = {}
+        # return
         return obs, info
 
     def step(self,
@@ -101,16 +105,13 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
                                         bool,
                                         bool,
                                         dict[str, Any]]:
-        '''
-        1. accept an action and set the heartbeat signal
-        2. wait for the next market data call incoming
-        3. observe the next observation
-        4. calculate the reward
-        5. set the signal and return the result
-        step() needs to integrated with trbox strategy heartbeat events sync
-        '''
+        # begin stepping
+        self._ready.set()
+        # put the action
         self.action_q.put(action)
-
+        # wait for reward
         reward = self.reward_q.get()
+        # get obs
         obs = self.obs_q.get()
+        # return
         return obs, reward, False, False, {}

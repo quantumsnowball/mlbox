@@ -1,7 +1,9 @@
+from trbox.common.logger import set_log_level
 from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
+from gymnasium.spaces import Box, Discrete
 from trbox.broker.paper import PaperEX
 from trbox.event.market import OhlcvWindow
 from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
@@ -29,6 +31,12 @@ Reward = np.float32
 
 
 class Env(TrEnv):
+    interval = INTERVAL
+
+    # Env
+    observation_space = Box(low=0, high=1, shape=(N_FEATURE, ), )
+    action_space = Discrete(3)
+
     @override
     def observe(self, my: Context[OhlcvWindow]) -> Obs:
         win = my.event.win['Close']
@@ -54,6 +62,10 @@ class Env(TrEnv):
         return reward
 
     @override
+    def every(self, my: Context[OhlcvWindow]) -> None:
+        my.memory['price'][INTERVAL].append(my.event.price)
+
+    @override
     def make(self) -> Trader:
         return Trader(
             strategy=Strategy(name='TrEnv')
@@ -64,5 +76,6 @@ class Env(TrEnv):
         )
 
 
+set_log_level('debug')
 env = Env()
 env.reset()
