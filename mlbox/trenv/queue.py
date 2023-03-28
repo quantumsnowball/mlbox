@@ -25,3 +25,6 @@ class TrEnvQueue(Queue[T]):
             raise TerminatedError
         else:
             return item
+
+    def clear(self) -> None:
+        self.queue.clear()

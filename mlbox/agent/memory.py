@@ -19,14 +19,14 @@ class Experience(Generic[T_Obs,
     action: T_Action
     reward: T_Reward
     next_obs: T_Obs
-    done: bool
+    terminated: bool
 
     def tuple(self) -> tuple[T_Obs,
                              T_Action,
                              T_Reward,
                              T_Obs,
                              bool]:
-        return (self.obs, self.action, self.reward, self.next_obs, self.done, )
+        return (self.obs, self.action, self.reward, self.next_obs, self.terminated, )
 
 
 @dataclass
@@ -71,5 +71,5 @@ class Replay(Generic[T_Obs,
         next_obs = np.array(tuple(
             s.next_obs for s in samples)).reshape((size, -1))
         done = np.array(tuple(
-            s.done for s in samples)).reshape((size, -1))
+            s.terminated for s in samples)).reshape((size, -1))
         return Batch(obs, action, reward, next_obs, done)

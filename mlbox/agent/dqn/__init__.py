@@ -1,5 +1,6 @@
+from inspect import currentframe
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, SupportsFloat, TypeVar
 
 import numpy as np
 import torch
@@ -95,26 +96,18 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
     def remember(self,
                  obs: T_Obs,
                  action: T_Action,
-                 reward: T_Reward) -> None:
-        # remember value if lag-1 exists
-        try:
-            self._replay.remember(
-                Experience[T_Obs, T_Action, T_Reward](
-                    # lag-1 values
-                    obs=self._prev_obs,
-                    action=self._prev_action,
-                    # current values
-                    reward=reward,
-                    next_obs=obs,
-                    done=False,
-                )
+                 reward: T_Reward,
+                 next_obs: T_Obs,
+                 terminated: bool) -> None:
+        self._replay.remember(
+            Experience[T_Obs, T_Action, T_Reward](
+                obs=obs,
+                action=action,
+                reward=reward,
+                next_obs=next_obs,
+                terminated=terminated,
             )
-        except AttributeError:
-            pass
-
-        # update lag-1 values
-        self._prev_obs = obs
-        self._prev_action = action
+        )
 
     def update_target(self) -> None:
         weights = self.policy.state_dict()
@@ -171,20 +164,28 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
 
         for i_eps in range(n_eps):
             self.progress = min(max(i_eps/n_eps, 0), 1)
-            # create a new environment
-            self.reset()
+            # reset to a new environment
+            obs, *_ = self.env.reset()
             # run the env
-            self.env.run()
+            cum_reward = 0.0
+            while True:
+                action = self.decide(obs, epsilon=self.progress)
+                next_obs, reward, terminated, *_ = self.env.step(action)
+                if terminated:
+                    break
+                self.remember(obs, action, reward, next_obs, terminated)
+                obs = next_obs
+                cum_reward += float(reward)
             # learn from experience replay
             self.learn(**kwargs)
-            result = getattr(self.env.portfolio.metrics,
-                             tracing_metrics, float('nan'))
+            # result = getattr(self.env.portfolio.metrics,
+            #                  tracing_metrics, float('nan'))
             if i_eps % update_target_every == 0:
                 self.update_target()
             if i_eps % report_progress_every == 0:
                 print(
-                    f'{tracing_metrics} = {result:+.4f} '
-                    f'[{i_eps+1} / {n_eps}]'
+                    f'[{i_eps+1: >3} / {n_eps}] '
+                    f'cum_reward = {cum_reward:+.4f}'
                 )
 
     #
@@ -235,8 +236,14 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
 
     @override
     def prompt(self,
-               path: Path | str) -> None:
-        path = Path(path)
+               name: str) -> None:
+        # prepare caller info
+        frame = currentframe()
+        caller_frame = frame.f_back if frame else None
+        globals = caller_frame.f_globals if caller_frame else None
+        script_path = Path(globals['__file__']) if globals else Path()
+        base_dir = Path(script_path).parent.relative_to(Path.cwd())
+        path = base_dir / name
         if path.is_file():
             if input(f'Model {path} exists, load? (y/[n]) ').upper() == 'Y':
                 # load agent

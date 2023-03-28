@@ -122,6 +122,10 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
             pass
         # clear flag until first step
         self._ready.clear()
+        # reset queues
+        self.obs_q.clear()
+        self.action_q.clear()
+        self.reward_q.clear()
         # create env
         self._trader = self.make()
         t = Thread(target=self._trader.run, daemon=True)
@@ -157,7 +161,9 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
             # return
             return obs, reward, False, False, {}
         except TerminatedError:
-            # # return dummy
+            # reset flag
+            self._ready.clear()
+            # return dummy
             obs: Any = np.array([[]])
             reward: Any = 0.0
             return obs, reward, True, False, {}
