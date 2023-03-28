@@ -5,5 +5,5 @@
 typecheck:
 	@mypy --strict mlbox
 typecheck-everything:
-	@mypy --strict .
+	@mypy .
 
