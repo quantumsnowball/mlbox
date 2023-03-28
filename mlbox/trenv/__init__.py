@@ -4,12 +4,17 @@ from typing import Any, Generic, Self, SupportsFloat, TypeVar
 
 import numpy as np
 from gymnasium import Env
+from pandas import Timestamp
+from trbox.broker.paper import PaperEX
 from trbox.common.logger import Log
+from trbox.common.types import Symbol
 from trbox.event.market import OhlcvWindow
+from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
 from trbox.strategy import Context, Hook
 from trbox.trader import Trader
 
 from mlbox.trenv.queue import TerminatedError, TrEnvQueue
+from mlbox.trenv.strategy import TrEnvStrategy
 
 T_Obs = TypeVar('T_Obs')
 T_Action = TypeVar('T_Action')
@@ -17,13 +22,24 @@ T_Reward = TypeVar('T_Reward')
 
 
 class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
-    interval = 1
+    Market: type[YahooHistoricalWindows]
+    interval: int
+    symbol: Symbol
+    start: Timestamp | str
+    end: Timestamp | str
+    length: int
 
     def __new__(cls) -> Self:
         try:
             # ensure attrs are implemented in subclass instance
             cls.observation_space
             cls.action_space
+            cls.Market
+            cls.interval
+            cls.symbol
+            cls.start
+            cls.end
+            cls.length
             return super().__new__(cls)
         except AttributeError as e:
             raise NotImplementedError(e.name) from None
@@ -34,10 +50,6 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
         self.action_q = TrEnvQueue[T_Action]()
         self.reward_q = TrEnvQueue[T_Reward]()
         self._ready = Event()
-
-    @abstractmethod
-    def make(self) -> Trader:
-        ...
 
     @abstractmethod
     def observe(self, my: Context[OhlcvWindow]) -> T_Obs:
@@ -85,6 +97,18 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
     #
     # gym.Env
     #
+
+    def make(self) -> Trader:
+        return Trader(
+            strategy=TrEnvStrategy(name='TrEnv', trenv=self)
+            .on(self.symbol, OhlcvWindow, do=self.do),
+            market=self.Market(
+                symbols=(self.symbol,),
+                start=self.start,
+                end=self.end,
+                length=self.length),
+            broker=PaperEX((self.symbol,))
+        )
 
     def reset(self,
               *,

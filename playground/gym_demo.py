@@ -4,16 +4,13 @@ from time import sleep
 import numpy as np
 import numpy.typing as npt
 from gymnasium.spaces import Box, Discrete
-from trbox.broker.paper import PaperEX
 from trbox.common.logger import set_log_level
 from trbox.event.market import OhlcvWindow
 from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
-from trbox.strategy import Context, Strategy
-from trbox.trader import Trader
+from trbox.strategy import Context
 from typing_extensions import override
 
 from mlbox.trenv import TrEnv
-from mlbox.trenv.strategy import TrEnvStrategy
 from mlbox.utils import crop
 
 SYMBOL = 'BTC-USD'
@@ -21,7 +18,7 @@ SYMBOLS = (SYMBOL, )
 START = '2020-01-01'
 END = '2020-12-31'
 LENGTH = 200
-INTERVAL = 1
+INTERVAL = 5
 STEP = 0.2
 START_LV = 0.01
 N_FEATURE = LENGTH-1
@@ -33,11 +30,17 @@ Reward = np.float32
 
 
 class Env(TrEnv[Obs, Action, Reward]):
-    interval = INTERVAL
-
     # Env
     observation_space = Box(low=0, high=1, shape=(N_FEATURE, ), )
     action_space = Discrete(3)
+
+    # Trader
+    Market = YahooHistoricalWindows
+    interval = INTERVAL
+    symbol = SYMBOL
+    start = START
+    end = END
+    length = LENGTH
 
     @override
     def observe(self, my: Context[OhlcvWindow]) -> Obs:
@@ -66,16 +69,6 @@ class Env(TrEnv[Obs, Action, Reward]):
     @override
     def every(self, my: Context[OhlcvWindow]) -> None:
         my.memory['price'][INTERVAL].append(my.event.price)
-
-    @override
-    def make(self) -> Trader:
-        return Trader(
-            strategy=TrEnvStrategy(name='TrEnv', trenv=self)
-            .on(SYMBOL, OhlcvWindow, do=self.do),
-            market=YahooHistoricalWindows(
-                symbols=SYMBOLS, start=START, end=END, length=LENGTH),
-            broker=PaperEX(SYMBOLS)
-        )
 
 
 # set_log_level('warning')

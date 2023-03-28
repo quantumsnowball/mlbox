@@ -1,11 +1,15 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from trbox.event import Event
 from trbox.event.system import Exit
 from trbox.strategy import Strategy
 
-from mlbox.trenv import TrEnv
 from mlbox.trenv.queue import Terminated
+
+if TYPE_CHECKING:
+    from mlbox.trenv import TrEnv
 
 
 class TrEnvStrategy(Strategy):
