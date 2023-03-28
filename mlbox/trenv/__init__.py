@@ -50,6 +50,7 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
         self.action_q = TrEnvQueue[T_Action]()
         self.reward_q = TrEnvQueue[T_Reward]()
         self._ready = Event()
+        self._trader: Trader
 
     @abstractmethod
     def observe(self, my: Context[OhlcvWindow]) -> T_Obs:
@@ -134,11 +135,10 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
         Log.info('waiting for obs')
         obs = self.obs_q.get()
         Log.info('got obs')
-        info = {}
         # set ready flag
         self._ready.set()
         # return
-        return obs, info
+        return obs, {}
 
     def step(self,
              action: T_Action) -> tuple[T_Obs,
@@ -164,6 +164,6 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
             # reset flag
             self._ready.clear()
             # return dummy
-            obs: Any = np.array([[]])
-            reward: Any = 0.0
-            return obs, reward, True, False, {}
+            obs_: Any = np.array([[]])
+            reward_: Any = 0.0
+            return obs_, reward_, True, False, {}

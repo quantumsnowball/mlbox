@@ -104,5 +104,5 @@ class Agent(ABC, Generic[T_Obs, T_Action, T_Reward]):
 
     @abstractmethod
     def prompt(self,
-               path: Path | str) -> None:
+               name: str) -> None:
         ...
