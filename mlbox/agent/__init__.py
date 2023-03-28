@@ -2,9 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Generic, Literal, Self, TypeVar
 
-from gymnasium import Space
-from trbox.strategy import Hook
-from trbox.trader import Trader
+from gymnasium import Env, Space
 
 T_Obs = TypeVar('T_Obs')
 T_Action = TypeVar('T_Action')
@@ -16,7 +14,9 @@ class Agent(ABC, Generic[T_Obs, T_Action, T_Reward]):
     obs_space: Space[T_Obs]
     device: Literal['cuda', 'cpu', ]
 
-    def __new__(cls) -> Self:
+    def __new__(cls,
+                *,
+                env: Env[T_Obs, T_Action]) -> Self:
         try:
             # ensure attrs are implemented in subclass instance
             cls.action_space
@@ -26,38 +26,26 @@ class Agent(ABC, Generic[T_Obs, T_Action, T_Reward]):
         except AttributeError as e:
             raise NotImplementedError(e.name) from None
 
-    def __init__(self) -> None:
+    def __init__(self,
+                 *,
+                 env: Env[T_Obs, T_Action]) -> None:
         super().__init__()
+        self.env = env
         self.progress = 0.0
     #
     # env
     #
 
-    @abstractmethod
-    def make(self) -> Trader:
-        ''' create a new env '''
-        ...
-
-    def reset(self) -> None:
-        ''' calling self.make() to reset self.env to a new one '''
-        self.env = self.make()
-
     @property
-    @abstractmethod
-    def explorer(self) -> Hook:
-        ''' factory method to create the Hook for the Trader env '''
-        ...
-
-    @property
-    def env(self) -> Trader:
-        ''' Trader as env '''
+    def env(self) -> Env[T_Obs, T_Action]:
+        ''' a gym.Env compatible object '''
         try:
             return self._env
         except AttributeError:
             raise NotImplementedError('env') from None
 
     @env.setter
-    def env(self, env: Trader) -> None:
+    def env(self, env: Env[T_Obs, T_Action]) -> None:
         self._env = env
 
     #
