@@ -106,7 +106,7 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
                     # current values
                     reward=reward,
                     next_obs=obs,
-                    done=False,
+                    terminated=False,
                 )
             )
         except AttributeError:
