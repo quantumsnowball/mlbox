@@ -6,10 +6,9 @@ from gymnasium import Env, Space
 
 T_Obs = TypeVar('T_Obs')
 T_Action = TypeVar('T_Action')
-T_Reward = TypeVar('T_Reward')
 
 
-class Agent(ABC, Generic[T_Obs, T_Action, T_Reward]):
+class Agent(ABC, Generic[T_Obs, T_Action]):
     action_space: Space[T_Action]
     obs_space: Space[T_Obs]
     device: Literal['cuda', 'cpu', ]

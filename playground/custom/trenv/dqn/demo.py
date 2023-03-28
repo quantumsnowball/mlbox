@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -71,7 +70,7 @@ def every(my: Context[OhlcvWindow]) -> None:
 #
 
 
-class MyEnv(TrEnv[Obs, Action, Reward]):
+class MyEnv(TrEnv[Obs, Action]):
     # Env
     observation_space = Box(low=0, high=1, shape=(N_FEATURE, ), )
     action_space = Discrete(3)
@@ -104,11 +103,11 @@ class MyEnv(TrEnv[Obs, Action, Reward]):
 #
 # Agent
 #
-class MyAgent(DQNAgent[Obs, Action, Reward]):
+class MyAgent(DQNAgent[Obs, Action]):
     device = 'cuda'
     replay_size = 100
     update_target_every = 5
-    n_eps = 4
+    n_eps = 40
     n_epoch = 500
     gamma = 1.0
 

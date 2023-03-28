@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from threading import Event, Thread
-from typing import Any, Generic, Self, SupportsFloat, TypeVar
+from typing import Any, Self, SupportsFloat, TypeVar
 
 import numpy as np
 from gymnasium import Env
@@ -18,10 +18,9 @@ from mlbox.trenv.strategy import TrEnvStrategy
 
 T_Obs = TypeVar('T_Obs')
 T_Action = TypeVar('T_Action')
-T_Reward = TypeVar('T_Reward')
 
 
-class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
+class TrEnv(Env[T_Obs, T_Action], ABC):
     Market: type[YahooHistoricalWindows]
     interval: int
     symbol: Symbol
@@ -48,7 +47,7 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
         super().__init__()
         self.obs_q = TrEnvQueue[T_Obs]()
         self.action_q = TrEnvQueue[T_Action]()
-        self.reward_q = TrEnvQueue[T_Reward]()
+        self.reward_q = TrEnvQueue[SupportsFloat]()
         self._ready = Event()
         self._trader: Trader
 
@@ -61,7 +60,7 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
         ...
 
     @abstractmethod
-    def grant(self, my: Context[OhlcvWindow]) -> T_Reward:
+    def grant(self, my: Context[OhlcvWindow]) -> SupportsFloat:
         ...
 
     def every(self, _: Context[OhlcvWindow]) -> None:
@@ -142,7 +141,7 @@ class TrEnv(Env[T_Obs, T_Action], Generic[T_Obs, T_Action, T_Reward], ABC):
 
     def step(self,
              action: T_Action) -> tuple[T_Obs,
-                                        T_Reward,
+                                        SupportsFloat,
                                         bool,
                                         bool,
                                         dict[str, Any]]:

@@ -1,29 +1,27 @@
 import random
 from collections import deque
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Generic, SupportsFloat, TypeVar
 
 import numpy as np
 import numpy.typing as npt
 
 T_Obs = TypeVar('T_Obs')
 T_Action = TypeVar('T_Action')
-T_Reward = TypeVar('T_Reward')
 
 
 @dataclass
 class Experience(Generic[T_Obs,
-                         T_Action,
-                         T_Reward]):
+                         T_Action]):
     obs: T_Obs
     action: T_Action
-    reward: T_Reward
+    reward: SupportsFloat
     next_obs: T_Obs
     terminated: bool
 
     def tuple(self) -> tuple[T_Obs,
                              T_Action,
-                             T_Reward,
+                             SupportsFloat,
                              T_Obs,
                              bool]:
         return (self.obs, self.action, self.reward, self.next_obs, self.terminated, )
@@ -39,21 +37,18 @@ class Batch:
 
 
 class Replay(Generic[T_Obs,
-                     T_Action,
-                     T_Reward]):
+                     T_Action]):
     def __init__(self,
                  maxlen: int = 10000):
         self._memory = deque[Experience[T_Obs,
-                                        T_Action,
-                                        T_Reward]](maxlen=maxlen)
+                                        T_Action]](maxlen=maxlen)
 
     def __len__(self) -> int:
         return len(self._memory)
 
     def remember(self,
                  exp: Experience[T_Obs,
-                                 T_Action,
-                                 T_Reward]) -> None:
+                                 T_Action]) -> None:
         self._memory.append(exp)
 
     def sample(self,

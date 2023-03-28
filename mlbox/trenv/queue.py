@@ -15,7 +15,7 @@ class TerminatedError(Exception):
 T = TypeVar('T')
 
 
-class TrEnvQueue(Queue[T]):
+class TrEnvQueue(Queue[T | Terminated]):
     @override
     def get(self,
             *args: Any,

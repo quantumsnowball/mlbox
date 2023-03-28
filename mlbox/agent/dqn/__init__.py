@@ -15,10 +15,9 @@ from mlbox.agent.memory import Experience, Replay
 
 T_Obs = TypeVar('T_Obs')
 T_Action = TypeVar('T_Action')
-T_Reward = TypeVar('T_Reward')
 
 
-class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
+class DQNAgent(Agent[T_Obs, T_Action]):
     # replay memory
     replay_size = 10000
     # learn
@@ -39,7 +38,7 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
         if replay_size is None:
             replay_size = self.replay_size
 
-        self._replay = Replay[T_Obs, T_Action, T_Reward](replay_size)
+        self._replay = Replay[T_Obs, T_Action](replay_size)
 
     #
     # props
@@ -96,11 +95,11 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
     def remember(self,
                  obs: T_Obs,
                  action: T_Action,
-                 reward: T_Reward,
+                 reward: SupportsFloat,
                  next_obs: T_Obs,
                  terminated: bool) -> None:
         self._replay.remember(
-            Experience[T_Obs, T_Action, T_Reward](
+            Experience[T_Obs, T_Action](
                 obs=obs,
                 action=action,
                 reward=reward,
