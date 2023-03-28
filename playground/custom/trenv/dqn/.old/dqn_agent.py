@@ -79,7 +79,7 @@ class MyAgent(DQNAgent[Obs, Action, Reward]):
     device = 'cuda'
     replay_size = 100
     update_target_every = 5
-    n_eps = 40
+    n_eps = 4
     n_epoch = 500
     gamma = 1.0
 
