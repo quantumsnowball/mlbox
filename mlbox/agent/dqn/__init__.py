@@ -1,3 +1,4 @@
+from inspect import currentframe
 from pathlib import Path
 from typing import Any, SupportsFloat, TypeVar
 
@@ -235,8 +236,14 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
 
     @override
     def prompt(self,
-               path: Path | str) -> None:
-        path = Path(path)
+               name: str) -> None:
+        # prepare caller info
+        frame = currentframe()
+        caller_frame = frame.f_back if frame else None
+        globals = caller_frame.f_globals if caller_frame else None
+        script_path = Path(globals['__file__']) if globals else Path()
+        base_dir = Path(script_path).parent.relative_to(Path.cwd())
+        path = base_dir / name
         if path.is_file():
             if input(f'Model {path} exists, load? (y/[n]) ').upper() == 'Y':
                 # load agent

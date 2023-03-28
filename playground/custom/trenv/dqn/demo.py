@@ -28,7 +28,7 @@ INTERVAL = 5
 STEP = 0.2
 START_LV = 0.01
 N_FEATURE = LENGTH-1
-MODEL_PATH = Path('model.pth')
+MODEL_NAME = 'model.pth'
 
 Obs = npt.NDArray[np.float32]
 Action = np.int64
@@ -180,6 +180,6 @@ backtest = Backtest(
 # main
 #
 agent = MyAgent(env=MyEnv())
-agent.prompt(MODEL_PATH)
+agent.prompt(MODEL_NAME)
 backtest.run()
 backtest.result.save()
