@@ -32,6 +32,9 @@ Action = np.int64
 Reward = np.float32
 
 
+#
+# Env
+#
 class MyEnv(TrEnv[Obs, Action, Reward]):
     # Env
     observation_space = Box(low=0, high=1, shape=(N_FEATURE, ), )
@@ -74,6 +77,9 @@ class MyEnv(TrEnv[Obs, Action, Reward]):
         my.memory['price'][INTERVAL].append(my.event.price)
 
 
+#
+# Agent
+#
 class MyAgent(DQNAgent[Obs, Action, Reward]):
     device = 'cuda'
     replay_size = 100
@@ -105,7 +111,5 @@ class MyAgent(DQNAgent[Obs, Action, Reward]):
 #
 # main
 #
-env = MyEnv()
-agent = MyAgent(env=env)
-print(agent.env)
-# agent.prompt(MODEL_PATH)
+agent = MyAgent(env=MyEnv())
+agent.prompt(MODEL_PATH)
