@@ -10,7 +10,8 @@ from trbox.common.logger import Log
 from trbox.common.types import Symbol
 from trbox.event.market import OhlcvWindow
 from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
-from trbox.strategy import Context, Hook
+from trbox.strategy.context import Context
+from trbox.strategy.types import Hook
 from trbox.trader import Trader
 
 from mlbox.trenv.queue import TerminatedError, TrEnvQueue
@@ -100,7 +101,7 @@ class TrEnv(Env[T_Obs, T_Action], ABC):
 
     def make(self) -> Trader:
         return Trader(
-            strategy=TrEnvStrategy(name='TrEnv', trenv=self)
+            strategy=TrEnvStrategy[T_Obs, T_Action](name='TrEnv', trenv=self)
             .on(self.symbol, OhlcvWindow, do=self.do),
             market=self.Market(
                 symbols=(self.symbol,),

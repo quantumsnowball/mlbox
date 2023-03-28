@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from trbox.event import Event
 from trbox.event.system import Exit
@@ -12,10 +12,14 @@ if TYPE_CHECKING:
     from mlbox.trenv import TrEnv
 
 
-class TrEnvStrategy(Strategy):
+T_Obs = TypeVar('T_Obs')
+T_Action = TypeVar('T_Action')
+
+
+class TrEnvStrategy(Strategy, Generic[T_Obs, T_Action]):
     def __init__(self,
                  *args: Any,
-                 trenv: TrEnv,
+                 trenv: TrEnv[T_Obs, T_Action],
                  **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.trenv = trenv
