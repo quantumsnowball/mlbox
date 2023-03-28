@@ -14,7 +14,7 @@ from mlbox.agent.memory import Experience, Replay
 
 T_Obs = TypeVar('T_Obs')
 T_Action = TypeVar('T_Action')
-T_Reward = TypeVar('T_Reward', bound=SupportsFloat)
+T_Reward = TypeVar('T_Reward')
 
 
 class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
@@ -166,6 +166,7 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
             # reset to a new environment
             obs, *_ = self.env.reset()
             # run the env
+            cum_reward = 0.0
             while True:
                 action = self.decide(obs, epsilon=self.progress)
                 next_obs, reward, terminated, *_ = self.env.step(action)
@@ -173,6 +174,7 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
                     break
                 self.remember(obs, action, reward, next_obs, terminated)
                 obs = next_obs
+                cum_reward += float(reward)
             # learn from experience replay
             self.learn(**kwargs)
             # result = getattr(self.env.portfolio.metrics,
@@ -181,8 +183,8 @@ class DQNAgent(Agent[T_Obs, T_Action, T_Reward]):
                 self.update_target()
             if i_eps % report_progress_every == 0:
                 print(
-                    # f'{tracing_metrics} = {result:+.4f} '
-                    f'[{i_eps+1} / {n_eps}]'
+                    f'[{i_eps+1: >3} / {n_eps}] '
+                    f'cum_reward = {cum_reward:+.4f}'
                 )
 
     #
