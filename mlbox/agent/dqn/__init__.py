@@ -1,6 +1,6 @@
 from inspect import currentframe
 from pathlib import Path
-from typing import Any, SupportsFloat, TypeVar
+from typing import Any, SupportsFloat
 
 import numpy as np
 import torch
@@ -12,9 +12,7 @@ from typing_extensions import override
 
 from mlbox.agent import Agent
 from mlbox.agent.memory import Experience, Replay
-
-T_Obs = TypeVar('T_Obs')
-T_Action = TypeVar('T_Action')
+from mlbox.types import T_Action, T_Obs
 
 
 class DQNAgent(Agent[T_Obs, T_Action]):
@@ -30,15 +28,9 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     report_progress_every = 1
     tracing_metrics = 'total_return'
 
-    def __init__(self,
-                 *args: Any,
-                 replay_size: int | None = None,
-                 **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        if replay_size is None:
-            replay_size = self.replay_size
-
-        self._replay = Replay[T_Obs, T_Action](replay_size)
+    def __init__(self) -> None:
+        super().__init__()
+        self._replay = Replay[T_Obs, T_Action](self.replay_size)
 
     #
     # props
@@ -193,7 +185,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
 
     @override
     def explore(self) -> T_Action:
-        random_action = self.action_space.sample()
+        random_action = self.env.action_space.sample()
         return random_action
 
     @override

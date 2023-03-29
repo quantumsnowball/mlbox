@@ -1,5 +1,3 @@
-from typing import Any
-
 import numpy as np
 import numpy.typing as npt
 from gymnasium.spaces import Box, Discrete
@@ -9,7 +7,9 @@ from trbox.backtest import Backtest
 from trbox.broker.paper import PaperEX
 from trbox.event.market import OhlcvWindow
 from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
-from trbox.strategy import Context, Hook, Strategy
+from trbox.strategy import Strategy
+from trbox.strategy.context import Context
+from trbox.strategy.types import Hook
 from trbox.trader import Trader
 from typing_extensions import override
 
@@ -65,15 +65,14 @@ def grant(my: Context[OhlcvWindow]) -> Reward:
 def every(my: Context[OhlcvWindow]) -> None:
     my.memory['price'][INTERVAL].append(my.event.price)
 
+
 #
 # Env
 #
-
-
 class MyEnv(TrEnv[Obs, Action]):
     # Env
-    observation_space = Box(low=0, high=1, shape=(N_FEATURE, ), )
-    action_space = Discrete(3)
+    observation_space: Box = Box(low=0, high=1, shape=(N_FEATURE, ), )
+    action_space: Discrete = Discrete(3)
 
     # Trader
     Market = YahooHistoricalWindows
@@ -111,20 +110,13 @@ class MyAgent(DQNAgent[Obs, Action]):
     n_epoch = 500
     gamma = 1.0
 
-    # obs
-    obs_space = Box(low=0, high=1, shape=(N_FEATURE, ), )
-    in_dim = obs_space.shape[0]
-
-    # action
-    action_space = Discrete(3)
-    out_dim = action_space.n.item()
-
-    def __init__(self,
-                 *args: Any,
-                 **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.policy = FullyConnected(self.in_dim, self.out_dim).to(self.device)
-        self.target = FullyConnected(self.in_dim, self.out_dim).to(self.device)
+    def __init__(self) -> None:
+        super().__init__()
+        self.env = MyEnv()
+        in_dim = self.env.observation_space.shape[0]
+        out_dim = self.env.action_space.n.item()
+        self.policy = FullyConnected(in_dim, out_dim).to(self.device)
+        self.target = FullyConnected(in_dim, out_dim).to(self.device)
         self.update_target()
         self.optimizer = Adam(self.policy.parameters(),
                               lr=1e-3)
@@ -178,7 +170,7 @@ backtest = Backtest(
 #
 # main
 #
-agent = MyAgent(env=MyEnv())
+agent = MyAgent()
 agent.prompt(MODEL_NAME)
 backtest.run()
 backtest.result.save()

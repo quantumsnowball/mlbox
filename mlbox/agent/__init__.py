@@ -1,35 +1,25 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Generic, Literal, Self, TypeVar
+from typing import Generic, Literal, Self
 
-from gymnasium import Env, Space
+from gymnasium import Env
 
-T_Obs = TypeVar('T_Obs')
-T_Action = TypeVar('T_Action')
+from mlbox.types import T_Action, T_Obs
 
 
 class Agent(ABC, Generic[T_Obs, T_Action]):
-    action_space: Space[T_Action]
-    obs_space: Space[T_Obs]
     device: Literal['cuda', 'cpu', ]
 
-    def __new__(cls,
-                *,
-                env: Env[T_Obs, T_Action]) -> Self:
+    def __new__(cls) -> Self:
         try:
             # ensure attrs are implemented in subclass instance
-            cls.action_space
-            cls.obs_space
             cls.device
             return super().__new__(cls)
         except AttributeError as e:
             raise NotImplementedError(e.name) from None
 
-    def __init__(self,
-                 *,
-                 env: Env[T_Obs, T_Action]) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.env = env
         self.progress = 0.0
     #
     # env

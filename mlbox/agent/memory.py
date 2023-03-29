@@ -1,13 +1,12 @@
 import random
 from collections import deque
 from dataclasses import dataclass
-from typing import Generic, SupportsFloat, TypeVar
+from typing import Generic, SupportsFloat
 
 import numpy as np
 import numpy.typing as npt
 
-T_Obs = TypeVar('T_Obs')
-T_Action = TypeVar('T_Action')
+from mlbox.types import T_Action, T_Obs
 
 
 @dataclass
