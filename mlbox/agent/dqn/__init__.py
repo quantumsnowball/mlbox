@@ -247,7 +247,9 @@ class DQNAgent(Agent[T_Obs, T_Action]):
 
     @override
     def prompt(self,
-               name: str) -> None:
+               name: str,
+               *,
+               start_training: bool = False) -> None:
         # prepare caller info
         frame = currentframe()
         caller_frame = frame.f_back if frame else None
@@ -259,7 +261,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             if input(f'Model {path} exists, load? (y/[n]) ').upper() == 'Y':
                 # load agent
                 self.load(path)
-        if input(f'Start training the agent? ([y]/n) ').upper() != 'N':
+        if start_training or input(f'Start training the agent? ([y]/n) ').upper() != 'N':
             # train agent
             self.train()
             if input(f'Save model? [y]/n) ').upper() != 'N':
