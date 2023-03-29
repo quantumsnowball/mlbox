@@ -24,8 +24,9 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     gamma = 0.99
     # train
     n_eps = 100
+    print_hash_every = 1
     update_target_every = 10
-    report_progress_every = 1
+    report_progress_every = 10
     tracing_metrics = 'total_return'
 
     def __init__(self) -> None:
@@ -137,6 +138,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             loss.backward()
             self.optimizer.step()
 
+    @override
     def train(self,
               n_eps: int | None = None,
               *,
@@ -153,7 +155,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
         if tracing_metrics is None:
             tracing_metrics = self.tracing_metrics
 
-        for i_eps in range(n_eps):
+        for i_eps in range(1, n_eps+1):
             self.progress = min(max(i_eps/n_eps, 0), 1)
             # reset to a new environment
             obs, *_ = self.env.reset()
@@ -169,15 +171,13 @@ class DQNAgent(Agent[T_Obs, T_Action]):
                 cum_reward += float(reward)
             # learn from experience replay
             self.learn(**kwargs)
-            # result = getattr(self.env.portfolio.metrics,
-            #                  tracing_metrics, float('nan'))
             if i_eps % update_target_every == 0:
                 self.update_target()
+            # report progress
+            if i_eps % self.print_hash_every == 0:
+                print('#', end='', flush=True)
             if i_eps % report_progress_every == 0:
-                print(
-                    f'[{i_eps+1: >3} / {n_eps}] '
-                    f'cum_reward = {cum_reward:+.4f}'
-                )
+                print(f' | Episode {i_eps:>4d} | {cum_reward=:.1f}')
 
     #
     # acting
