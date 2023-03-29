@@ -28,13 +28,9 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     report_progress_every = 1
     tracing_metrics = 'total_return'
 
-    def __init__(self,
-                 replay_size: int | None = None) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        if replay_size is None:
-            replay_size = self.replay_size
-
-        self._replay = Replay[T_Obs, T_Action](replay_size)
+        self._replay = Replay[T_Obs, T_Action](self.replay_size)
 
     #
     # props
