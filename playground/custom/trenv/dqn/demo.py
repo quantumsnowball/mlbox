@@ -9,7 +9,9 @@ from trbox.backtest import Backtest
 from trbox.broker.paper import PaperEX
 from trbox.event.market import OhlcvWindow
 from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
-from trbox.strategy import Context, Hook, Strategy
+from trbox.strategy import Strategy
+from trbox.strategy.context import Context
+from trbox.strategy.types import Hook
 from trbox.trader import Trader
 from typing_extensions import override
 
@@ -65,11 +67,10 @@ def grant(my: Context[OhlcvWindow]) -> Reward:
 def every(my: Context[OhlcvWindow]) -> None:
     my.memory['price'][INTERVAL].append(my.event.price)
 
+
 #
 # Env
 #
-
-
 class MyEnv(TrEnv[Obs, Action]):
     # Env
     observation_space = Box(low=0, high=1, shape=(N_FEATURE, ), )

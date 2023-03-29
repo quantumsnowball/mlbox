@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Generic, Literal, Self, TypeVar
+from typing import Generic, Literal, Self
 
 from gymnasium import Env, Space
 
-T_Obs = TypeVar('T_Obs')
-T_Action = TypeVar('T_Action')
+from mlbox.types import T_Action, T_Obs
 
 
 class Agent(ABC, Generic[T_Obs, T_Action]):

@@ -1,6 +1,6 @@
 from inspect import currentframe
 from pathlib import Path
-from typing import Any, SupportsFloat, TypeVar
+from typing import Any, SupportsFloat
 
 import numpy as np
 import torch
@@ -12,9 +12,7 @@ from typing_extensions import override
 
 from mlbox.agent import Agent
 from mlbox.agent.memory import Experience, Replay
-
-T_Obs = TypeVar('T_Obs')
-T_Action = TypeVar('T_Action')
+from mlbox.types import T_Action, T_Obs
 
 
 class DQNAgent(Agent[T_Obs, T_Action]):

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from threading import Event, Thread
-from typing import Any, Self, SupportsFloat, TypeVar
+from typing import Any, Self, SupportsFloat
 
 import numpy as np
 from gymnasium import Env
@@ -16,9 +16,7 @@ from trbox.trader import Trader
 
 from mlbox.trenv.queue import TerminatedError, TrEnvQueue
 from mlbox.trenv.strategy import TrEnvStrategy
-
-T_Obs = TypeVar('T_Obs')
-T_Action = TypeVar('T_Action')
+from mlbox.types import T_Action, T_Obs
 
 
 class TrEnv(Env[T_Obs, T_Action], ABC):
