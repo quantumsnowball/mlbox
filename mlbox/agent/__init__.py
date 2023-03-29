@@ -77,6 +77,12 @@ class Agent(ABC, Generic[T_Obs, T_Action]):
         ''' train an agent to learn through all necessary steps '''
         ...
 
+    @abstractmethod
+    def play(self,
+             render: bool) -> None:
+        ''' agent to play through the env using current policy '''
+        ...
+
     #
     # I/O
     #

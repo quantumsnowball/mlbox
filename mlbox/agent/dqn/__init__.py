@@ -1,3 +1,4 @@
+from collections import deque
 from inspect import currentframe
 from pathlib import Path
 from typing import Any, SupportsFloat
@@ -27,6 +28,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     print_hash_every = 1
     update_target_every = 10
     report_progress_every = 10
+    rolling_reward_ma = 5
     tracing_metrics = 'total_return'
 
     def __init__(self) -> None:
@@ -155,12 +157,12 @@ class DQNAgent(Agent[T_Obs, T_Action]):
         if tracing_metrics is None:
             tracing_metrics = self.tracing_metrics
 
+        rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
         for i_eps in range(1, n_eps+1):
             self.progress = min(max(i_eps/n_eps, 0), 1)
             # reset to a new environment
             obs, *_ = self.env.reset()
             # run the env
-            cum_reward = 0.0
             while True:
                 action = self.decide(obs, epsilon=self.progress)
                 next_obs, reward, terminated, *_ = self.env.step(action)
@@ -168,7 +170,6 @@ class DQNAgent(Agent[T_Obs, T_Action]):
                     break
                 self.remember(obs, action, reward, next_obs, terminated)
                 obs = next_obs
-                cum_reward += float(reward)
             # learn from experience replay
             self.learn(**kwargs)
             if i_eps % update_target_every == 0:
@@ -177,7 +178,26 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             if i_eps % self.print_hash_every == 0:
                 print('#', end='', flush=True)
             if i_eps % report_progress_every == 0:
-                print(f' | Episode {i_eps:>4d} | {cum_reward=:.1f}')
+                rolling_reward.append(self.play())
+                mean_reward = sum(rolling_reward)/len(rolling_reward)
+                print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
+
+    @override
+    def play(self,
+             *,
+             render: bool = False) -> float:
+        # reset to a new environment
+        obs, *_ = self.env.reset()
+        # run the env
+        total_reward = 0.0
+        while True:
+            action = self.exploit(obs)
+            next_obs, reward, terminated, *_ = self.env.step(action)
+            if terminated:
+                break
+            obs = next_obs
+            total_reward += float(reward)
+        return total_reward
 
     #
     # acting
