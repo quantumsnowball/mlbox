@@ -29,10 +29,8 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     tracing_metrics = 'total_return'
 
     def __init__(self,
-                 *args: Any,
-                 replay_size: int | None = None,
-                 **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+                 replay_size: int | None = None) -> None:
+        super().__init__()
         if replay_size is None:
             replay_size = self.replay_size
 
@@ -191,7 +189,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
 
     @override
     def explore(self) -> T_Action:
-        random_action = self.action_space.sample()
+        random_action = self.env.action_space.sample()
         return random_action
 
     @override
