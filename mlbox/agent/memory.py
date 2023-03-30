@@ -32,7 +32,7 @@ class Batch:
     action: npt.NDArray[np.float32]
     reward: npt.NDArray[np.float32]
     next_obs: npt.NDArray[np.float32]
-    done: npt.NDArray[np.bool8]
+    terminated: npt.NDArray[np.bool8]
 
 
 class Replay(Generic[T_Obs,
@@ -64,6 +64,10 @@ class Replay(Generic[T_Obs,
             s.reward for s in samples)).reshape((size, -1))
         next_obs = np.array(tuple(
             s.next_obs for s in samples)).reshape((size, -1))
-        done = np.array(tuple(
+        terminated = np.array(tuple(
             s.terminated for s in samples)).reshape((size, -1))
-        return Batch(obs, action, reward, next_obs, done)
+        return Batch(obs=obs,
+                     action=action,
+                     reward=reward,
+                     next_obs=next_obs,
+                     terminated=terminated)

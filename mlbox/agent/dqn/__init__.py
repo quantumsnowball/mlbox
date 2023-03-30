@@ -5,7 +5,7 @@ from typing import Any, SupportsFloat
 
 import numpy as np
 import torch
-from torch import float32, tensor
+from torch import float32, int64, tensor
 from torch.nn import Module
 from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
@@ -124,21 +124,29 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             batch = self._replay.sample(batch_size)
             obs = tensor(batch.obs,
                          dtype=float32).to(self.device)
+            action = tensor(batch.action,
+                            dtype=int64).to(self.device)
             reward = tensor(batch.reward,
                             dtype=float32).to(self.device)
             next_obs = tensor(batch.next_obs,
                               dtype=float32).to(self.device)
-            # train mode
+            # set train mode
             self.policy.train()
-            # calc features and targets
-            X = obs
-            y = reward + gamma*self.target(next_obs)
+            # calc state-action value
+            s_a_val = self.policy(obs).gather(1, action)
+            # calc expected state-action value
+            with torch.no_grad():
+                next_s_a_val = self.target(next_obs).max(1).values.unsqueeze(1)
+            expected_s_a_val = reward + (gamma*next_s_a_val)
+            # calc loss
+            loss = self.loss_function(s_a_val,
+                                      expected_s_a_val)
             # back propagation
-            predicted = self.policy(X)
-            loss = self.loss_function(predicted, y)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+            # if _ == n_epoch-1:
+            #     breakpoint()
 
     @override
     def train(self,
@@ -157,6 +165,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
         if tracing_metrics is None:
             tracing_metrics = self.tracing_metrics
 
+        self.policy.train()
         rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
         for i_eps in range(1, n_eps+1):
             self.progress = min(max(i_eps/n_eps, 0), 1)
@@ -165,8 +174,9 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             # run the env
             while True:
                 action = self.decide(obs, epsilon=self.progress)
-                next_obs, reward, terminated, *_ = self.env.step(action)
-                if terminated:
+                next_obs, reward, terminated, truncated, *_ = \
+                    self.env.step(action)
+                if terminated or truncated:
                     break
                 self.remember(obs, action, reward, next_obs, terminated)
                 obs = next_obs
@@ -186,6 +196,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     def play(self,
              *,
              render: bool = False) -> float:
+        self.policy.eval()
         # reset to a new environment
         obs, *_ = self.env.reset()
         # run the env

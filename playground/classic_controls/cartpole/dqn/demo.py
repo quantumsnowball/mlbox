@@ -2,7 +2,7 @@ import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
 from gymnasium.spaces import Box, Discrete
-from torch.nn import CrossEntropyLoss
+from torch.nn import MSELoss
 from torch.optim import Adam
 
 from mlbox.agent.dqn import DQNAgent
@@ -21,7 +21,7 @@ class MyAgent(DQNAgent[Obs, Action]):
     rolling_reward_ma = 20
     n_eps = 3000
     n_epoch = 50
-    gamma = 0.9
+    gamma = 0.95
 
     def __init__(self) -> None:
         super().__init__()
@@ -35,7 +35,7 @@ class MyAgent(DQNAgent[Obs, Action]):
         self.update_target()
         self.optimizer = Adam(self.policy.parameters(),
                               lr=1e-3)
-        self.loss_function = CrossEntropyLoss()
+        self.loss_function = MSELoss()
 
 
 agent = MyAgent()

@@ -172,6 +172,6 @@ backtest = Backtest(
 # main
 #
 agent = MyAgent()
-agent.prompt(MODEL_NAME)
+agent.prompt(MODEL_NAME, start_training=True)
 backtest.run()
 backtest.result.save()
