@@ -25,6 +25,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     gamma = 0.99
     # train
     n_eps = 100
+    max_step = 10000
     print_hash_every = 1
     update_target_every = 10
     report_progress_every = 10
@@ -130,13 +131,20 @@ class DQNAgent(Agent[T_Obs, T_Action]):
                             dtype=float32).to(self.device)
             next_obs = tensor(batch.next_obs,
                               dtype=float32).to(self.device)
+            non_final_mask = tensor(~batch.terminated.squeeze(),
+                                    dtype=torch.bool).to(self.device)
+            non_final_next_obs = next_obs[non_final_mask]
             # set train mode
             self.policy.train()
             # calc state-action value
             sa_val = self.policy(obs).gather(1, action)
             # calc expected state-action value
+            next_sa_val = torch.zeros(len(obs), 1, device=self.device)
             with torch.no_grad():
-                next_sa_val = self.target(next_obs).max(1).values.unsqueeze(1)
+                next_sa_val[non_final_mask] = self.target(
+                    non_final_next_obs).max(1).values.unsqueeze(1)
+            # with torch.no_grad():
+            #     next_sa_val = self.target(next_obs).max(1).values.unsqueeze(1)
             expected_sa_val = reward + (gamma*next_sa_val)
             # calc loss
             loss = self.loss_function(sa_val,
@@ -145,19 +153,27 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+            # print(f'{loss=}')
+            # print(f'{non_final_next_obs.shape=}')
+            # print(f'{next_sa_val.shape=}')
+            # print(f'{expected_sa_val.shape=}')
+            # breakpoint()
             # if _ == n_epoch-1:
             #     breakpoint()
 
-    @override
+    @ override
     def train(self,
               n_eps: int | None = None,
               *,
+              max_step: int | None = None,
               update_target_every: int | None = None,
               report_progress_every: int | None = None,
               tracing_metrics: str | None = None,
               **kwargs: Any) -> None:
         if n_eps is None:
             n_eps = self.n_eps
+        if max_step is None:
+            max_step = self.max_step
         if update_target_every is None:
             update_target_every = self.update_target_every
         if report_progress_every is None:
@@ -172,14 +188,14 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             # reset to a new environment
             obs, *_ = self.env.reset()
             # run the env
-            while True:
+            for _ in range(max_step):
                 action = self.decide(obs, epsilon=self.progress)
                 next_obs, reward, terminated, truncated, *_ = \
                     self.env.step(action)
-                if terminated or truncated:
-                    break
                 self.remember(obs, action, reward, next_obs, terminated)
                 obs = next_obs
+                if terminated or truncated:
+                    break
             # learn from experience replay
             self.learn(**kwargs)
             if i_eps % update_target_every == 0:
@@ -188,12 +204,13 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             if i_eps % self.print_hash_every == 0:
                 print('#', end='', flush=True)
             if i_eps % report_progress_every == 0:
-                rolling_reward.append(self.play())
+                rolling_reward.append(self.play(max_step))
                 mean_reward = sum(rolling_reward)/len(rolling_reward)
                 print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
 
     @override
     def play(self,
+             max_step: int,
              *,
              render: bool = False) -> float:
         self.policy.eval()
@@ -201,7 +218,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
         obs, *_ = self.env.reset()
         # run the env
         total_reward = 0.0
-        while True:
+        for _ in range(max_step):
             action = self.exploit(obs)
             next_obs, reward, terminated, *_ = self.env.step(action)
             if terminated:
