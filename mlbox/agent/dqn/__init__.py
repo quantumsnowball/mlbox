@@ -133,14 +133,14 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             # set train mode
             self.policy.train()
             # calc state-action value
-            s_a_val = self.policy(obs).gather(1, action)
+            sa_val = self.policy(obs).gather(1, action)
             # calc expected state-action value
             with torch.no_grad():
-                next_s_a_val = self.target(next_obs).max(1).values.unsqueeze(1)
-            expected_s_a_val = reward + (gamma*next_s_a_val)
+                next_sa_val = self.target(next_obs).max(1).values.unsqueeze(1)
+            expected_sa_val = reward + (gamma*next_sa_val)
             # calc loss
-            loss = self.loss_function(s_a_val,
-                                      expected_s_a_val)
+            loss = self.loss_function(sa_val,
+                                      expected_sa_val)
             # back propagation
             self.optimizer.zero_grad()
             loss.backward()
