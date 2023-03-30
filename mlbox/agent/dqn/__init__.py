@@ -5,6 +5,7 @@ from typing import Any, SupportsFloat
 
 import numpy as np
 import torch
+from gymnasium import Env
 from torch import float32, int64, tensor
 from torch.nn import Module
 from torch.nn.modules.loss import _Loss
@@ -212,19 +213,21 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     def play(self,
              max_step: int,
              *,
-             render: bool = False) -> float:
-        self.policy.eval()
+             env: Env[T_Obs, T_Action] | None = None) -> float:
+        # select env
+        env = env if env is not None else self.env
         # reset to a new environment
-        obs, *_ = self.env.reset()
+        obs, *_ = env.reset()
         # run the env
+        self.policy.eval()
         total_reward = 0.0
         for _ in range(max_step):
             action = self.exploit(obs)
-            next_obs, reward, terminated, *_ = self.env.step(action)
-            if terminated:
-                break
+            next_obs, reward, terminated, *_ = env.step(action)
             obs = next_obs
             total_reward += float(reward)
+            if terminated:
+                break
         return total_reward
 
     #
