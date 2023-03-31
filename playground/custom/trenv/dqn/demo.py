@@ -104,10 +104,12 @@ class MyEnv(TrEnv[Obs, Action]):
 #
 class MyAgent(DQNAgent[Obs, Action]):
     device = 'cuda'
-    replay_size = 100
+    replay_size = 1000
+    batch_size = 64
+    skip_terminal_obs = True
     update_target_every = 5
     report_progress_every = 1
-    n_eps = 40
+    n_eps = 50
     n_epoch = 500
     gamma = 1.0
 
@@ -116,8 +118,10 @@ class MyAgent(DQNAgent[Obs, Action]):
         self.env = MyEnv()
         in_dim = self.env.observation_space.shape[0]
         out_dim = self.env.action_space.n.item()
-        self.policy = FullyConnected(in_dim, out_dim).to(self.device)
-        self.target = FullyConnected(in_dim, out_dim).to(self.device)
+        self.policy = FullyConnected(in_dim, out_dim,
+                                     hidden_dim=32).to(self.device)
+        self.target = FullyConnected(in_dim, out_dim,
+                                     hidden_dim=32).to(self.device)
         self.update_target()
         self.optimizer = Adam(self.policy.parameters(),
                               lr=1e-3)

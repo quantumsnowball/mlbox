@@ -136,7 +136,7 @@ def plot_durations(show_result=False):
             display.display(plt.gcf())
 
 
-def optimize_model():
+def optimize_model(i_episode):
     if len(memory) < BATCH_SIZE:
         return
     transitions = memory.sample(BATCH_SIZE)
@@ -184,7 +184,9 @@ def optimize_model():
     torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100)
     optimizer.step()
 
-    breakpoint()
+    print(f'{loss=}')
+    if i_episode > 20:
+        breakpoint()
 
 
 if torch.cuda.is_available():
@@ -216,7 +218,7 @@ for i_episode in range(num_episodes):
         state = next_state
 
         # Perform one step of the optimization (on the policy network)
-        optimize_model()
+        optimize_model(i_episode)
 
         # Soft update of the target network's weights
         # θ′ ← τ θ + (1 −τ )θ′

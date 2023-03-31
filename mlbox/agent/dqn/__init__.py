@@ -27,6 +27,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     # train
     n_eps = 100
     max_step = 10000
+    skip_terminal_obs = False
     print_hash_every = 1
     update_target_every = 10
     report_progress_every = 10
@@ -190,12 +191,19 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             obs, *_ = self.env.reset()
             # run the env
             for _ in range(max_step):
+                # act
                 action = self.decide(obs, epsilon=self.progress)
+                # step
                 next_obs, reward, terminated, truncated, *_ = \
                     self.env.step(action)
+                done = terminated or truncated
+                # remember
+                if done and self.skip_terminal_obs:
+                    break
                 self.remember(obs, action, reward, next_obs, terminated)
+                # pointing next
                 obs = next_obs
-                if terminated or truncated:
+                if done:
                     break
             # learn from experience replay
             self.learn(**kwargs)

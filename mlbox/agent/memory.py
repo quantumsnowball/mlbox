@@ -56,13 +56,13 @@ class Replay(Generic[T_Obs,
         size = min(len(self._memory), batch_size)
         samples = random.sample(self._memory, size)
         # pack
-        obs = np.array(tuple(
+        obs = np.stack(tuple(
             s.obs for s in samples)).reshape((size, -1))
         action = np.array(tuple(
             s.action for s in samples)).reshape((size, -1))
         reward = np.array(tuple(
             s.reward for s in samples)).reshape((size, -1))
-        next_obs = np.array(tuple(
+        next_obs = np.stack(tuple(
             s.next_obs for s in samples)).reshape((size, -1))
         terminated = np.array(tuple(
             s.terminated for s in samples)).reshape((size, -1))

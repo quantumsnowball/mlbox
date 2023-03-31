@@ -1,4 +1,6 @@
 from typing import TypeVar
 
-T_Obs = TypeVar('T_Obs')
+from numpy.typing import ArrayLike
+
+T_Obs = TypeVar('T_Obs', bound=ArrayLike)
 T_Action = TypeVar('T_Action')

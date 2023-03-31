@@ -162,6 +162,7 @@ class TrEnv(Env[T_Obs, T_Action], ABC):
             # reset flag
             self._ready.clear()
             # return dummy
+            # BUG should provide a valid obs with same shape
             obs_: Any = np.array([[]])
             reward_: Any = 0.0
             return obs_, reward_, True, False, {}
