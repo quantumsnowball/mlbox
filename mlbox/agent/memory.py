@@ -1,9 +1,10 @@
 from collections import deque
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, astuple, dataclass
 from typing import Generic, SupportsFloat
 
 import numpy as np
 import numpy.typing as npt
+from torch import Tensor, tensor
 from torch.utils.data import DataLoader, Dataset
 
 from mlbox.types import T_Action, T_Obs
@@ -20,13 +21,6 @@ class Experience(Generic[T_Obs,
 
     def __post_init__(self):
         self.reward = np.float32(self.reward)
-
-    def tuple(self) -> tuple[T_Obs,
-                             T_Action,
-                             SupportsFloat,
-                             T_Obs,
-                             bool]:
-        return (self.obs, self.action, self.reward, self.next_obs, self.terminated, )
 
 
 # @dataclass
@@ -59,8 +53,17 @@ class Replay(Dataset[Experience[T_Obs, T_Action]],
 
     def sample(self,
                batch_size: int) -> dict:
+        def collate(batch: list[dict]) -> dict:
+            # avoid create tensor from list of nd.array
+            def to_tensor(k: str) -> Tensor:
+                column = [b[k] for b in batch]
+                return tensor(np.stack(column))
+            keys = tuple(batch[0].keys())
+            tensor_dict = {k: to_tensor(k) for k in keys}
+            return tensor_dict
+
         # sampling
-        loader = DataLoader(self, batch_size, shuffle=True)
+        loader = DataLoader(self, batch_size, shuffle=True, collate_fn=collate)
         # pack
         samples = next(iter(loader))
         return samples
