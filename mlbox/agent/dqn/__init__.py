@@ -6,7 +6,6 @@ from typing import Any, SupportsFloat
 import numpy as np
 import torch
 from gymnasium import Env
-from torch import float32, int64, tensor
 from torch.nn import Module
 from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
@@ -125,11 +124,11 @@ class DQNAgent(Agent[T_Obs, T_Action]):
         for _ in range(n_epoch):
             # prepare batch of experience
             batch = self._replay.sample(batch_size, device=self.device)
-            obs = batch['obs']
-            action = batch['action'].unsqueeze(1)
-            reward = batch['reward'].unsqueeze(1)
-            next_obs = batch['next_obs']
-            non_final_mask = (~batch['terminated'])
+            obs = batch.obs
+            action = batch.action.unsqueeze(1)
+            reward = batch.reward.unsqueeze(1)
+            next_obs = batch.next_obs
+            non_final_mask = (~batch.terminated)
             non_final_next_obs = next_obs[non_final_mask]
             # set train mode
             self.policy.train()

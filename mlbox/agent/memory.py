@@ -1,9 +1,9 @@
 from collections import deque
-from dataclasses import asdict, astuple, dataclass
+from dataclasses import dataclass
 from typing import Generic, SupportsFloat
 
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 from torch import Tensor, tensor
 from torch.utils.data import DataLoader, Dataset
 
@@ -23,13 +23,13 @@ class Experience(Generic[T_Obs,
         self.reward = np.float32(self.reward)
 
 
-# @dataclass
-# class Batch:
-#     obs: npt.NDArray[np.float32]
-#     action: npt.NDArray[np.float32]
-#     reward: npt.NDArray[np.float32]
-#     next_obs: npt.NDArray[np.float32]
-#     terminated: npt.NDArray[np.bool8]
+@dataclass
+class Batch:
+    obs: Tensor
+    action: Tensor
+    reward: Tensor
+    next_obs: Tensor
+    terminated: Tensor
 
 
 class Replay(Dataset[Experience[T_Obs, T_Action]],
@@ -43,8 +43,9 @@ class Replay(Dataset[Experience[T_Obs, T_Action]],
         return len(self._memory)
 
     def __getitem__(self,
-                    index: int) -> dict:
-        return asdict(self._memory[index])
+                    index: int) -> Experience[T_Obs,
+                                              T_Action]:
+        return self._memory[index]
 
     def remember(self,
                  exp: Experience[T_Obs,
@@ -54,18 +55,24 @@ class Replay(Dataset[Experience[T_Obs, T_Action]],
     def sample(self,
                batch_size: int,
                *,
-               device: str = 'cpu') -> dict:
-        def collate(batch: list[dict]) -> dict:
+               device: str = 'cpu') -> Batch:
+        def collate(batch: list[Experience[T_Obs, T_Action]]) -> Batch:
             # avoid create tensor from list of nd.array
-            def to_tensor(k: str) -> Tensor:
-                column = [b[k] for b in batch]
-                return tensor(np.stack(column), device=device)
-            keys = tuple(batch[0].keys())
-            tensor_dict = {k: to_tensor(k) for k in keys}
-            return tensor_dict
+            def to_tensor(arr: NDArray) -> Tensor:
+                return tensor(arr, device=device)
+            return Batch(
+                obs=to_tensor(np.stack([b.obs for b in batch])),
+                action=to_tensor(np.array([b.action for b in batch])),
+                reward=to_tensor(np.array([b.reward for b in batch])),
+                next_obs=to_tensor(np.stack([b.next_obs for b in batch])),
+                terminated=to_tensor(np.stack([b.terminated for b in batch]))
+            )
 
         # sampling
-        loader = DataLoader(self, batch_size, shuffle=True, collate_fn=collate)
+        loader = DataLoader[Experience[T_Obs, T_Action]](self,
+                                                         batch_size,
+                                                         shuffle=True,
+                                                         collate_fn=collate)
         # pack
-        samples = next(iter(loader))
+        samples: Batch = next(iter(loader))
         return samples
