@@ -1,7 +1,7 @@
 from collections import deque
 from inspect import currentframe
 from pathlib import Path
-from typing import Any, SupportsFloat
+from typing import Any
 
 import numpy as np
 import torch
@@ -12,7 +12,8 @@ from torch.optim import Optimizer
 from typing_extensions import override
 
 from mlbox.agent import Agent
-from mlbox.agent.memory import Replay
+from mlbox.agent.memory import CachedReplay
+from mlbox.trenv.queue import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
@@ -26,7 +27,6 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     # train
     n_eps = 100
     max_step = 10000
-    skip_terminal_obs = False
     print_hash_every = 1
     update_target_every = 10
     report_progress_every = 10
@@ -35,8 +35,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
 
     def __init__(self) -> None:
         super().__init__()
-        self._replay = Replay[T_Obs, T_Action](self.replay_size)
-        self.remember = self._replay.remember
+        self.replay = CachedReplay[T_Obs, T_Action](self.replay_size)
 
     #
     # props
@@ -107,7 +106,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
 
         for _ in range(n_epoch):
             # prepare batch of experience
-            batch = self._replay.sample(batch_size, device=self.device)
+            batch = self.replay.sample(batch_size, device=self.device)
             obs = batch.obs
             action = batch.action.unsqueeze(1)
             reward = batch.reward.unsqueeze(1)
@@ -165,17 +164,22 @@ class DQNAgent(Agent[T_Obs, T_Action]):
                 # act
                 action = self.decide(obs, epsilon=self.progress)
                 # step
-                next_obs, reward, terminated, truncated, *_ = \
-                    self.env.step(action)
-                done = terminated or truncated
-                # remember
-                if done and self.skip_terminal_obs:
+                try:
+                    next_obs, reward, terminated, truncated, *_ = \
+                        self.env.step(action)
+                except TerminatedError:
                     break
-                self.remember(obs, action, reward, next_obs, terminated)
+                done = terminated or truncated
+                # cache experience
+                self.replay.cache(obs, action, reward, next_obs, terminated)
                 # pointing next
                 obs = next_obs
                 if done:
                     break
+            # post processing to cached experience before flush
+            self.replay.assert_terminated_flag()
+            # flush cache experience to memory
+            self.replay.flush()
             # learn from experience replay
             self.learn(**kwargs)
             if i_eps % update_target_every == 0:
@@ -202,7 +206,10 @@ class DQNAgent(Agent[T_Obs, T_Action]):
         total_reward = 0.0
         for _ in range(max_step):
             action = self.exploit(obs)
-            next_obs, reward, terminated, *_ = env.step(action)
+            try:
+                next_obs, reward, terminated, *_ = env.step(action)
+            except TerminatedError:
+                break
             obs = next_obs
             total_reward += float(reward)
             if terminated:
