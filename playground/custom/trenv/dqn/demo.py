@@ -40,8 +40,7 @@ Reward = np.float32
 def observe(my: Context[OhlcvWindow]) -> Obs:
     win = my.event.win['Close']
     pct_chg = win.pct_change().dropna()
-    feature = np.array(pct_chg[-N_FEATURE:])
-    obs = np.array([feature, ], dtype=np.float32)
+    obs = np.array(pct_chg[-N_FEATURE:], dtype=np.float32)
     return obs
 
 
