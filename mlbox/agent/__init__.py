@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Generic, Literal, Self
+from typing import Generic
 
 from gymnasium import Env
 
@@ -8,34 +8,9 @@ from mlbox.types import T_Action, T_Obs
 
 
 class Agent(ABC, Generic[T_Obs, T_Action]):
-    device: Literal['cuda', 'cpu', ]
-
-    def __new__(cls) -> Self:
-        try:
-            # ensure attrs are implemented in subclass instance
-            cls.device
-            return super().__new__(cls)
-        except AttributeError as e:
-            raise NotImplementedError(e.name) from None
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.progress = 0.0
-    #
-    # env
-    #
-
-    @property
-    def env(self) -> Env[T_Obs, T_Action]:
-        ''' a gym.Env compatible object '''
-        try:
-            return self._env
-        except AttributeError:
-            raise NotImplementedError('env') from None
-
-    @env.setter
-    def env(self, env: Env[T_Obs, T_Action]) -> None:
-        self._env = env
+    '''
+    Define the interface of an Agent
+    '''
 
     #
     # acting

@@ -5,19 +5,18 @@ from typing import Any
 
 import numpy as np
 import torch
-from gymnasium import Env
 from torch.nn import Module
 from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
 from typing_extensions import override
 
-from mlbox.agent import Agent
+from mlbox.agent.basic import BasicAgent
 from mlbox.agent.memory import CachedReplay
 from mlbox.trenv.queue import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
-class DQNAgent(Agent[T_Obs, T_Action]):
+class DQNAgent(BasicAgent[T_Obs, T_Action]):
     # replay memory
     replay_size = 10000
     # learn
@@ -191,30 +190,6 @@ class DQNAgent(Agent[T_Obs, T_Action]):
                 rolling_reward.append(self.play(max_step))
                 mean_reward = sum(rolling_reward)/len(rolling_reward)
                 print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
-
-    @override
-    def play(self,
-             max_step: int,
-             *,
-             env: Env[T_Obs, T_Action] | None = None) -> float:
-        # select env
-        env = env if env is not None else self.env
-        # reset to a new environment
-        obs, *_ = env.reset()
-        # run the env
-        self.policy.eval()
-        total_reward = 0.0
-        for _ in range(max_step):
-            action = self.exploit(obs)
-            try:
-                next_obs, reward, terminated, *_ = env.step(action)
-            except TerminatedError:
-                break
-            obs = next_obs
-            total_reward += float(reward)
-            if terminated:
-                break
-        return total_reward
 
     #
     # acting
