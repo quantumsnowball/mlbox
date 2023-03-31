@@ -12,7 +12,7 @@ from torch.optim import Optimizer
 from typing_extensions import override
 
 from mlbox.agent import Agent
-from mlbox.agent.memory import Experience, Replay
+from mlbox.agent.memory import Replay
 from mlbox.types import T_Action, T_Obs
 
 
@@ -36,6 +36,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     def __init__(self) -> None:
         super().__init__()
         self._replay = Replay[T_Obs, T_Action](self.replay_size)
+        self.remember = self._replay.remember
 
     #
     # props
@@ -88,23 +89,6 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     #
     # training
     #
-
-    def remember(self,
-                 obs: T_Obs,
-                 action: T_Action,
-                 reward: SupportsFloat,
-                 next_obs: T_Obs,
-                 terminated: bool) -> None:
-        self._replay.remember(
-            Experience[T_Obs, T_Action](
-                obs=obs,
-                action=action,
-                reward=reward,
-                next_obs=next_obs,
-                terminated=terminated,
-            )
-        )
-
     def update_target(self) -> None:
         weights = self.policy.state_dict()
         self.target.load_state_dict(weights)
@@ -139,9 +123,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             with torch.no_grad():
                 next_sa_val[non_final_mask] = self.target(
                     non_final_next_obs).max(1).values.unsqueeze(1)
-            # with torch.no_grad():
-            #     next_sa_val = self.target(next_obs).max(1).values.unsqueeze(1)
-            expected_sa_val = reward + (gamma*next_sa_val)
+            expected_sa_val = reward + gamma*next_sa_val
             # calc loss
             loss = self.loss_function(sa_val,
                                       expected_sa_val)

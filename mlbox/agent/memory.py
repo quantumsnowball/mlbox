@@ -48,9 +48,20 @@ class Replay(Dataset[Experience[T_Obs, T_Action]],
         return self._memory[index]
 
     def remember(self,
-                 exp: Experience[T_Obs,
-                                 T_Action]) -> None:
-        self._memory.append(exp)
+                 obs: T_Obs,
+                 action: T_Action,
+                 reward: SupportsFloat,
+                 next_obs: T_Obs,
+                 terminated: bool) -> None:
+        self._memory.append(
+            Experience[T_Obs, T_Action](
+                obs=obs,
+                action=action,
+                reward=reward,
+                next_obs=next_obs,
+                terminated=terminated,
+            )
+        )
 
     def sample(self,
                batch_size: int,
