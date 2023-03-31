@@ -3,6 +3,7 @@ from typing import Any
 import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
+import torch
 from gymnasium.spaces import Box, Discrete
 from torch.distributions.categorical import Categorical
 from torch.nn import Module
@@ -22,12 +23,12 @@ class PolicyNet(Module):
         super().__init__()
         self._net = FullyConnected(*args, **kwargs)
 
-    def forward(self, X):
+    def forward(self, X) -> Categorical:
         return Categorical(logits=self._net(X))
 
 
 class MyAgent(PGAgent[Obs, Action]):
-    device = 'cuda'
+    device = 'cpu'
     max_step = 500
     n_eps = 1000
     batch_size = 6000
@@ -39,10 +40,11 @@ class MyAgent(PGAgent[Obs, Action]):
         assert isinstance(self.env.action_space, Discrete)
         in_dim = self.env.observation_space.shape[0]
         out_dim = self.env.action_space.n.item()
-        self.policy = FullyConnected(
+        self.policy_net = FullyConnected(
             in_dim, out_dim, hidden_dim=32).to(self.device)
-        self.optimizer = Adam(self.policy.parameters(), lr=1e-3)
+        self.optimizer = Adam(self.policy_net.parameters(), lr=1e-3)
 
 
 agent = MyAgent()
-print(agent)
+for _ in range(50):
+    print(agent.exploit(agent.env.observation_space.sample()))

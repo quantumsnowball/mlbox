@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import torch
 from torch.distributions import Categorical
 from torch.nn import Module
@@ -34,7 +35,8 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
 
     def policy(self,
                obs: T_Obs) -> Categorical:
-        logits = self.policy_net(obs)
+        obs_tensor = torch.tensor(obs, device=self.device)
+        logits = self.policy_net(obs_tensor)
         return Categorical(logits=logits)
 
     @override
@@ -52,7 +54,8 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
     @override
     def exploit(self, obs: T_Obs) -> T_Action:
         with torch.no_grad():
-            result: T_Action = self.policy(obs).sample().item()
+            dist = self.policy(obs)
+            result = dist.sample().item()
             return result
 
     #
