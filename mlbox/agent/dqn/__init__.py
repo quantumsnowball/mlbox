@@ -12,7 +12,7 @@ from torch.optim import Optimizer
 from typing_extensions import override
 
 from mlbox.agent import Agent
-from mlbox.agent.memory import Replay
+from mlbox.agent.memory import CachedReplay
 from mlbox.types import T_Action, T_Obs
 
 
@@ -35,8 +35,10 @@ class DQNAgent(Agent[T_Obs, T_Action]):
 
     def __init__(self) -> None:
         super().__init__()
-        self._replay = Replay[T_Obs, T_Action](self.replay_size)
+        self._replay = CachedReplay[T_Obs, T_Action](self.replay_size)
         self.remember = self._replay.remember
+        self.cache = self._replay.cache
+        self.flush = self._replay.flush
 
     #
     # props
@@ -168,14 +170,18 @@ class DQNAgent(Agent[T_Obs, T_Action]):
                 next_obs, reward, terminated, truncated, *_ = \
                     self.env.step(action)
                 done = terminated or truncated
-                # remember
+                # cache experience
                 if done and self.skip_terminal_obs:
                     break
-                self.remember(obs, action, reward, next_obs, terminated)
+                self.cache(obs, action, reward, next_obs, terminated)
                 # pointing next
                 obs = next_obs
                 if done:
                     break
+            # TODO post processing to cached experience before flush
+
+            # flush cache experience to memory
+            self.flush()
             # learn from experience replay
             self.learn(**kwargs)
             if i_eps % update_target_every == 0:

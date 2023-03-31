@@ -88,3 +88,30 @@ class Replay(Dataset[Experience[T_Obs, T_Action]],
         # pack
         samples: Batch = next(iter(loader))
         return samples
+
+
+class CachedReplay(Replay[T_Obs, T_Action]):
+    def __init__(self, maxlen: int = 10000):
+        super().__init__(maxlen)
+        self._cache = deque[Experience[T_Obs,
+                                       T_Action]]()
+
+    def cache(self,
+              obs: T_Obs,
+              action: T_Action,
+              reward: SupportsFloat,
+              next_obs: T_Obs,
+              terminated: bool) -> None:
+        self._cache.append(
+            Experience[T_Obs, T_Action](
+                obs=obs,
+                action=action,
+                reward=reward,
+                next_obs=next_obs,
+                terminated=terminated,
+            )
+        )
+
+    def flush(self):
+        self._memory.extend(self._cache)
+        self._cache.clear()
