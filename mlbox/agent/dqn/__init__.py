@@ -125,16 +125,11 @@ class DQNAgent(Agent[T_Obs, T_Action]):
         for _ in range(n_epoch):
             # prepare batch of experience
             batch = self._replay.sample(batch_size)
-            obs = tensor(batch.obs,
-                         dtype=float32).to(self.device)
-            action = tensor(batch.action,
-                            dtype=int64).to(self.device)
-            reward = tensor(batch.reward,
-                            dtype=float32).to(self.device)
-            next_obs = tensor(batch.next_obs,
-                              dtype=float32).to(self.device)
-            non_final_mask = tensor(~batch.terminated.squeeze(),
-                                    dtype=torch.bool).to(self.device)
+            obs = batch['obs'].to(self.device)
+            action = batch['action'].unsqueeze(1).to(self.device)
+            reward = batch['reward'].unsqueeze(1).to(self.device)
+            next_obs = batch['next_obs'].to(self.device)
+            non_final_mask = (~batch['terminated']).to(self.device)
             non_final_next_obs = next_obs[non_final_mask]
             # set train mode
             self.policy.train()
@@ -155,11 +150,6 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-            # print(f'{loss=}')
-            # print(f'{non_final_next_obs.shape=}')
-            # print(f'{next_sa_val.shape=}')
-            # print(f'{expected_sa_val.shape=}')
-            # breakpoint()
             # if _ == n_epoch-1:
             #     breakpoint()
 
@@ -250,7 +240,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     @override
     def exploit(self, obs: T_Obs) -> T_Action:
         with torch.no_grad():
-            obs_tensor = torch.tensor(obs).to(self.device)
+            obs_tensor = torch.tensor(obs, device=self.device)
             best_value_action = torch.argmax(self.policy(obs_tensor))
             result: T_Action = best_value_action.cpu().numpy()
             return result
