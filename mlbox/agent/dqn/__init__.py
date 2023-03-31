@@ -3,7 +3,6 @@ from inspect import currentframe
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import torch
 from torch.nn import Module
 from torch.nn.modules.loss import _Loss
@@ -196,27 +195,12 @@ class DQNAgent(BasicAgent[T_Obs, T_Action]):
     #
 
     @override
-    def explore(self) -> T_Action:
-        random_action = self.env.action_space.sample()
-        return random_action
-
-    @override
     def exploit(self, obs: T_Obs) -> T_Action:
         with torch.no_grad():
             obs_tensor = torch.tensor(obs, device=self.device)
             best_value_action = torch.argmax(self.policy(obs_tensor))
             result: T_Action = best_value_action.cpu().numpy()
             return result
-
-    @override
-    def decide(self,
-               obs: T_Obs,
-               *,
-               epsilon: float = 0.5) -> T_Action:
-        if np.random.random() > epsilon:
-            return self.explore()
-        else:
-            return self.exploit(obs)
 
     #
     # I/O
