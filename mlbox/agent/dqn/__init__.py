@@ -6,14 +6,13 @@ from typing import Any, SupportsFloat
 import numpy as np
 import torch
 from gymnasium import Env
-from torch import float32, int64, tensor
 from torch.nn import Module
 from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
 from typing_extensions import override
 
 from mlbox.agent import Agent
-from mlbox.agent.memory import Experience, Replay
+from mlbox.agent.memory import Replay
 from mlbox.types import T_Action, T_Obs
 
 
@@ -37,6 +36,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     def __init__(self) -> None:
         super().__init__()
         self._replay = Replay[T_Obs, T_Action](self.replay_size)
+        self.remember = self._replay.remember
 
     #
     # props
@@ -89,23 +89,6 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     #
     # training
     #
-
-    def remember(self,
-                 obs: T_Obs,
-                 action: T_Action,
-                 reward: SupportsFloat,
-                 next_obs: T_Obs,
-                 terminated: bool) -> None:
-        self._replay.remember(
-            Experience[T_Obs, T_Action](
-                obs=obs,
-                action=action,
-                reward=reward,
-                next_obs=next_obs,
-                terminated=terminated,
-            )
-        )
-
     def update_target(self) -> None:
         weights = self.policy.state_dict()
         self.target.load_state_dict(weights)
@@ -124,17 +107,12 @@ class DQNAgent(Agent[T_Obs, T_Action]):
 
         for _ in range(n_epoch):
             # prepare batch of experience
-            batch = self._replay.sample(batch_size)
-            obs = tensor(batch.obs,
-                         dtype=float32).to(self.device)
-            action = tensor(batch.action,
-                            dtype=int64).to(self.device)
-            reward = tensor(batch.reward,
-                            dtype=float32).to(self.device)
-            next_obs = tensor(batch.next_obs,
-                              dtype=float32).to(self.device)
-            non_final_mask = tensor(~batch.terminated.squeeze(),
-                                    dtype=torch.bool).to(self.device)
+            batch = self._replay.sample(batch_size, device=self.device)
+            obs = batch.obs
+            action = batch.action.unsqueeze(1)
+            reward = batch.reward.unsqueeze(1)
+            next_obs = batch.next_obs
+            non_final_mask = (~batch.terminated)
             non_final_next_obs = next_obs[non_final_mask]
             # set train mode
             self.policy.train()
@@ -145,9 +123,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             with torch.no_grad():
                 next_sa_val[non_final_mask] = self.target(
                     non_final_next_obs).max(1).values.unsqueeze(1)
-            # with torch.no_grad():
-            #     next_sa_val = self.target(next_obs).max(1).values.unsqueeze(1)
-            expected_sa_val = reward + (gamma*next_sa_val)
+            expected_sa_val = reward + gamma*next_sa_val
             # calc loss
             loss = self.loss_function(sa_val,
                                       expected_sa_val)
@@ -155,11 +131,6 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-            # print(f'{loss=}')
-            # print(f'{non_final_next_obs.shape=}')
-            # print(f'{next_sa_val.shape=}')
-            # print(f'{expected_sa_val.shape=}')
-            # breakpoint()
             # if _ == n_epoch-1:
             #     breakpoint()
 
@@ -250,7 +221,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     @override
     def exploit(self, obs: T_Obs) -> T_Action:
         with torch.no_grad():
-            obs_tensor = torch.tensor(obs).to(self.device)
+            obs_tensor = torch.tensor(obs, device=self.device)
             best_value_action = torch.argmax(self.policy(obs_tensor))
             result: T_Action = best_value_action.cpu().numpy()
             return result

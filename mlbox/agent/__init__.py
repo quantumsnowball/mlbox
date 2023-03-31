@@ -79,7 +79,9 @@ class Agent(ABC, Generic[T_Obs, T_Action]):
 
     @abstractmethod
     def play(self,
-             render: bool) -> None:
+             max_step: int,
+             *,
+             env: Env[T_Obs, T_Action] | None = None) -> float:
         ''' agent to play through the env using current policy '''
         ...
 

@@ -1,10 +1,11 @@
-import random
 from collections import deque
 from dataclasses import dataclass
-from typing import Generic, SupportsFloat
+from typing import Any, Generic, SupportsFloat
 
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
+from torch import Tensor, tensor
+from torch.utils.data import DataLoader, Dataset
 
 from mlbox.types import T_Action, T_Obs
 
@@ -18,25 +19,22 @@ class Experience(Generic[T_Obs,
     next_obs: T_Obs
     terminated: bool
 
-    def tuple(self) -> tuple[T_Obs,
-                             T_Action,
-                             SupportsFloat,
-                             T_Obs,
-                             bool]:
-        return (self.obs, self.action, self.reward, self.next_obs, self.terminated, )
+    def __post_init__(self) -> None:
+        # post processing
+        self.reward = np.float32(self.reward)
 
 
 @dataclass
 class Batch:
-    obs: npt.NDArray[np.float32]
-    action: npt.NDArray[np.float32]
-    reward: npt.NDArray[np.float32]
-    next_obs: npt.NDArray[np.float32]
-    terminated: npt.NDArray[np.bool8]
+    obs: Tensor
+    action: Tensor
+    reward: Tensor
+    next_obs: Tensor
+    terminated: Tensor
 
 
-class Replay(Generic[T_Obs,
-                     T_Action]):
+class Replay(Dataset[Experience[T_Obs, T_Action]],
+             Generic[T_Obs, T_Action]):
     def __init__(self,
                  maxlen: int = 10000):
         self._memory = deque[Experience[T_Obs,
@@ -45,29 +43,48 @@ class Replay(Generic[T_Obs,
     def __len__(self) -> int:
         return len(self._memory)
 
+    def __getitem__(self,
+                    index: int) -> Experience[T_Obs,
+                                              T_Action]:
+        return self._memory[index]
+
     def remember(self,
-                 exp: Experience[T_Obs,
-                                 T_Action]) -> None:
-        self._memory.append(exp)
+                 obs: T_Obs,
+                 action: T_Action,
+                 reward: SupportsFloat,
+                 next_obs: T_Obs,
+                 terminated: bool) -> None:
+        self._memory.append(
+            Experience[T_Obs, T_Action](
+                obs=obs,
+                action=action,
+                reward=reward,
+                next_obs=next_obs,
+                terminated=terminated,
+            )
+        )
 
     def sample(self,
-               batch_size: int) -> Batch:
+               batch_size: int,
+               *,
+               device: str = 'cpu') -> Batch:
+        def collate(batch: list[Experience[T_Obs, T_Action]]) -> Batch:
+            # avoid create tensor from list of nd.array
+            def to_tensor(arr: NDArray[Any]) -> Tensor:
+                return tensor(arr, device=device)
+            return Batch(
+                obs=to_tensor(np.stack([b.obs for b in batch])),
+                action=to_tensor(np.array([b.action for b in batch])),
+                reward=to_tensor(np.array([b.reward for b in batch])),
+                next_obs=to_tensor(np.stack([b.next_obs for b in batch])),
+                terminated=to_tensor(np.stack([b.terminated for b in batch]))
+            )
+
         # sampling
-        size = min(len(self._memory), batch_size)
-        samples = random.sample(self._memory, size)
+        loader = DataLoader[Experience[T_Obs, T_Action]](self,
+                                                         batch_size,
+                                                         shuffle=True,
+                                                         collate_fn=collate)
         # pack
-        obs = np.stack(tuple(
-            s.obs for s in samples)).reshape((size, -1))
-        action = np.array(tuple(
-            s.action for s in samples)).reshape((size, -1))
-        reward = np.array(tuple(
-            s.reward for s in samples)).reshape((size, -1))
-        next_obs = np.stack(tuple(
-            s.next_obs for s in samples)).reshape((size, -1))
-        terminated = np.array(tuple(
-            s.terminated for s in samples)).reshape((size, -1))
-        return Batch(obs=obs,
-                     action=action,
-                     reward=reward,
-                     next_obs=next_obs,
-                     terminated=terminated)
+        samples: Batch = next(iter(loader))
+        return samples
