@@ -39,5 +39,10 @@ class MyAgent(PGAgent[Obs, Action]):
         assert isinstance(self.env.action_space, Discrete)
         in_dim = self.env.observation_space.shape[0]
         out_dim = self.env.action_space.n.item()
-        self.policy = PolicyNet(in_dim, out_dim, hidden_dim=32)).to(self.device)
-        self.optimizer=Adam(self.policy.parameters(), lr = 1e-3)
+        self.policy = FullyConnected(
+            in_dim, out_dim, hidden_dim=32).to(self.device)
+        self.optimizer = Adam(self.policy.parameters(), lr=1e-3)
+
+
+agent = MyAgent()
+print(agent)
