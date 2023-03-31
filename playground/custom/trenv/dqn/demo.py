@@ -105,7 +105,6 @@ class MyAgent(DQNAgent[Obs, Action]):
     device = 'cuda'
     replay_size = 1000
     batch_size = 64
-    skip_terminal_obs = True
     update_target_every = 5
     report_progress_every = 1
     n_eps = 50
