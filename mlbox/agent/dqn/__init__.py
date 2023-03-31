@@ -4,8 +4,6 @@ from typing import Any
 
 import torch
 from torch.nn import Module
-from torch.nn.modules.loss import _Loss
-from torch.optim import Optimizer
 from typing_extensions import override
 
 from mlbox.agent.basic import BasicAgent
@@ -59,28 +57,6 @@ class DQNAgent(BasicAgent[T_Obs, T_Action]):
     @target.setter
     def target(self, target: Module) -> None:
         self._target = target
-
-    @property
-    def optimizer(self) -> Optimizer:
-        try:
-            return self._optimizer
-        except AttributeError:
-            raise NotImplementedError('optimizer') from None
-
-    @optimizer.setter
-    def optimizer(self, optimizer: Optimizer) -> None:
-        self._optimizer = optimizer
-
-    @property
-    def loss_function(self) -> _Loss:
-        try:
-            return self._loss_function
-        except AttributeError:
-            raise NotImplementedError('loss_function') from None
-
-    @loss_function.setter
-    def loss_function(self, loss_function: _Loss) -> None:
-        self._loss_function = loss_function
 
     #
     # training

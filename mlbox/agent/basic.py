@@ -4,6 +4,8 @@ from typing import Literal, Self
 
 import numpy as np
 from gymnasium import Env
+from torch.nn.modules.loss import _Loss
+from torch.optim import Optimizer
 from typing_extensions import override
 
 from mlbox.agent import Agent
@@ -29,6 +31,32 @@ class BasicAgent(Agent[T_Obs, T_Action]):
     def __init__(self) -> None:
         super().__init__()
         self.progress = 0.0
+
+    #
+    # props
+    #
+
+    @property
+    def optimizer(self) -> Optimizer:
+        try:
+            return self._optimizer
+        except AttributeError:
+            raise NotImplementedError('optimizer') from None
+
+    @optimizer.setter
+    def optimizer(self, optimizer: Optimizer) -> None:
+        self._optimizer = optimizer
+
+    @property
+    def loss_function(self) -> _Loss:
+        try:
+            return self._loss_function
+        except AttributeError:
+            raise NotImplementedError('loss_function') from None
+
+    @loss_function.setter
+    def loss_function(self, loss_function: _Loss) -> None:
+        self._loss_function = loss_function
 
     #
     # env
