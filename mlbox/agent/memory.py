@@ -52,12 +52,14 @@ class Replay(Dataset[Experience[T_Obs, T_Action]],
         self._memory.append(exp)
 
     def sample(self,
-               batch_size: int) -> dict:
+               batch_size: int,
+               *,
+               device: str = 'cpu') -> dict:
         def collate(batch: list[dict]) -> dict:
             # avoid create tensor from list of nd.array
             def to_tensor(k: str) -> Tensor:
                 column = [b[k] for b in batch]
-                return tensor(np.stack(column))
+                return tensor(np.stack(column), device=device)
             keys = tuple(batch[0].keys())
             tensor_dict = {k: to_tensor(k) for k in keys}
             return tensor_dict

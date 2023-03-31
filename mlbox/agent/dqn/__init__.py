@@ -124,12 +124,12 @@ class DQNAgent(Agent[T_Obs, T_Action]):
 
         for _ in range(n_epoch):
             # prepare batch of experience
-            batch = self._replay.sample(batch_size)
-            obs = batch['obs'].to(self.device)
-            action = batch['action'].unsqueeze(1).to(self.device)
-            reward = batch['reward'].unsqueeze(1).to(self.device)
-            next_obs = batch['next_obs'].to(self.device)
-            non_final_mask = (~batch['terminated']).to(self.device)
+            batch = self._replay.sample(batch_size, device=self.device)
+            obs = batch['obs']
+            action = batch['action'].unsqueeze(1)
+            reward = batch['reward'].unsqueeze(1)
+            next_obs = batch['next_obs']
+            non_final_mask = (~batch['terminated'])
             non_final_next_obs = next_obs[non_final_mask]
             # set train mode
             self.policy.train()
