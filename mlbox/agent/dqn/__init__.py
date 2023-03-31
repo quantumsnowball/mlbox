@@ -1,5 +1,4 @@
 from collections import deque
-from inspect import currentframe
 from pathlib import Path
 from typing import Any
 
@@ -220,25 +219,3 @@ class DQNAgent(BasicAgent[T_Obs, T_Action]):
         path = Path(path)
         torch.save(self.policy.state_dict(), path)
         print(f'Saved model: {path}')
-
-    @override
-    def prompt(self,
-               name: str,
-               *,
-               start_training: bool = False) -> None:
-        # prepare caller info
-        frame = currentframe()
-        caller_frame = frame.f_back if frame else None
-        globals = caller_frame.f_globals if caller_frame else None
-        script_path = Path(globals['__file__']) if globals else Path()
-        base_dir = Path(script_path).parent.relative_to(Path.cwd())
-        path = base_dir / name
-        if path.is_file():
-            if input(f'Model {path} exists, load? (y/[n]) ').upper() == 'Y':
-                # load agent
-                self.load(path)
-        if start_training or input(f'Start training the agent? ([y]/n) ').upper() != 'N':
-            # train agent
-            self.train()
-            if input(f'Save model? [y]/n) ').upper() != 'N':
-                self.save(path)

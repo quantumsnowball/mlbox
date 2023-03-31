@@ -47,8 +47,7 @@ class Agent(ABC, Generic[T_Obs, T_Action]):
         ...
 
     @abstractmethod
-    def train(self,
-              n_eps: int) -> None:
+    def train(self) -> None:
         ''' train an agent to learn through all necessary steps '''
         ...
 
