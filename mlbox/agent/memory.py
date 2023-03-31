@@ -5,6 +5,7 @@ from typing import Generic, SupportsFloat
 
 import numpy as np
 import numpy.typing as npt
+from torch.utils.data import Dataset
 
 from mlbox.types import T_Action, T_Obs
 
@@ -35,8 +36,8 @@ class Batch:
     terminated: npt.NDArray[np.bool8]
 
 
-class Replay(Generic[T_Obs,
-                     T_Action]):
+class Replay(Dataset[Experience[T_Obs, T_Action]],
+             Generic[T_Obs, T_Action]):
     def __init__(self,
                  maxlen: int = 10000):
         self._memory = deque[Experience[T_Obs,
@@ -44,6 +45,10 @@ class Replay(Generic[T_Obs,
 
     def __len__(self) -> int:
         return len(self._memory)
+
+    def __getitem__(self,
+                    index: int) -> Experience[T_Obs, T_Action]:
+        return self._memory[index]
 
     def remember(self,
                  exp: Experience[T_Obs,
