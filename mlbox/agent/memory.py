@@ -93,8 +93,8 @@ class Replay(Dataset[Experience[T_Obs, T_Action]],
 class CachedReplay(Replay[T_Obs, T_Action]):
     def __init__(self, maxlen: int = 10000):
         super().__init__(maxlen)
-        self._cache = deque[Experience[T_Obs,
-                                       T_Action]]()
+        self._cached = deque[Experience[T_Obs,
+                                        T_Action]]()
 
     def cache(self,
               obs: T_Obs,
@@ -102,7 +102,7 @@ class CachedReplay(Replay[T_Obs, T_Action]):
               reward: SupportsFloat,
               next_obs: T_Obs,
               terminated: bool) -> None:
-        self._cache.append(
+        self._cached.append(
             Experience[T_Obs, T_Action](
                 obs=obs,
                 action=action,
@@ -112,6 +112,11 @@ class CachedReplay(Replay[T_Obs, T_Action]):
             )
         )
 
-    def flush(self):
-        self._memory.extend(self._cache)
-        self._cache.clear()
+    def flush(self) -> None:
+        self._memory.extend(self._cached)
+        self._cached.clear()
+
+    # post processing helpers
+    def assert_terminated_flag(self) -> None:
+        last = self._cached[-1]
+        last.terminated = True

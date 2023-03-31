@@ -1,7 +1,7 @@
 from collections import deque
 from inspect import currentframe
 from pathlib import Path
-from typing import Any, SupportsFloat
+from typing import Any
 
 import numpy as np
 import torch
@@ -35,10 +35,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
 
     def __init__(self) -> None:
         super().__init__()
-        self._replay = CachedReplay[T_Obs, T_Action](self.replay_size)
-        self.remember = self._replay.remember
-        self.cache = self._replay.cache
-        self.flush = self._replay.flush
+        self.replay = CachedReplay[T_Obs, T_Action](self.replay_size)
 
     #
     # props
@@ -109,7 +106,7 @@ class DQNAgent(Agent[T_Obs, T_Action]):
 
         for _ in range(n_epoch):
             # prepare batch of experience
-            batch = self._replay.sample(batch_size, device=self.device)
+            batch = self.replay.sample(batch_size, device=self.device)
             obs = batch.obs
             action = batch.action.unsqueeze(1)
             reward = batch.reward.unsqueeze(1)
@@ -173,15 +170,15 @@ class DQNAgent(Agent[T_Obs, T_Action]):
                 # cache experience
                 if done and self.skip_terminal_obs:
                     break
-                self.cache(obs, action, reward, next_obs, terminated)
+                self.replay.cache(obs, action, reward, next_obs, terminated)
                 # pointing next
                 obs = next_obs
                 if done:
                     break
             # TODO post processing to cached experience before flush
-
+            self.replay.assert_terminated_flag()
             # flush cache experience to memory
-            self.flush()
+            self.replay.flush()
             # learn from experience replay
             self.learn(**kwargs)
             if i_eps % update_target_every == 0:
