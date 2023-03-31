@@ -11,7 +11,7 @@ from torch.optim import Optimizer
 from typing_extensions import override
 
 from mlbox.agent.basic import BasicAgent
-from mlbox.agent.memory import CachedReplay
+from mlbox.agent.dqn.memory import CachedReplay
 from mlbox.trenv.queue import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
