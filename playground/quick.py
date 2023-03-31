@@ -1,57 +1,46 @@
-from typing import Any, Generic, TypeVar
-
-import numpy as np
-import numpy.typing as npt
-from gymnasium import Env, Space
-from gymnasium.spaces import Box, Discrete
-
-Obs = npt.NDArray[np.float32]
-Action = np.int64
-Reward = np.float32
-
-T_Obs = TypeVar('T_Obs')
-T_Action = TypeVar('T_Action')
+from collections import deque
 
 
-# lib
-T_ActionSpace = TypeVar('T_ActionSpace', bound=Space)
-
-
-class TrEnv(Env[T_Obs, T_Action]):
-    ...
-
-
-class Agent(Generic[T_Obs, T_Action]):
+class Replay:
     def __init__(self) -> None:
-        super().__init__()
-        self.env: Env[T_Obs, T_Action]
+        self._memory = deque(maxlen=5)
+        self._cache = deque()
+
+    def remember(self, item):
+        self._memory.append(item)
+
+    def cache(self, item):
+        self._cache.append(item)
+
+    def flush(self):
+        self._memory.extend(self._cache)
+        self._cache.clear()
 
 
-class DQNAgent(Agent[T_Obs, T_Action]):
-    def __init__(self) -> None:
-        super().__init__()
+rp = Replay()
 
-    def explore(self) -> T_Action:
-        return self.env.action_space.sample()
+for i in range(7):
+    rp.remember(i)
 
-# implement
+print(rp._memory)
+print(rp._cache)
+print()
 
+for i in ['a', 'b', 'c', 'd', 'e', 'f']:
+    rp.cache(i)
 
-class MyEnv(TrEnv[Obs, Action]):
-    action_space: Discrete = Discrete(3)
+print(rp._memory)
+print(rp._cache)
+print()
 
+rp._cache[-1] = 'F'
 
-class MyAgent(DQNAgent[Obs, Action, ]):
-    def __init__(self) -> None:
-        super().__init__()
-        self.env = MyEnv()
-        n = self.env.action_space.n
-        print(n)
+print(rp._memory)
+print(rp._cache)
+print()
 
-    def main(self) -> None:
-        self.env
+rp.flush()
 
-
-agent = MyAgent()
-agent.env.action_space.sample()
-print(type(agent.env))
+print(rp._memory)
+print(rp._cache)
+print()
