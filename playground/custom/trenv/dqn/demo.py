@@ -26,7 +26,7 @@ LENGTH = 200
 INTERVAL = 5
 STEP = 0.2
 START_LV = 0.01
-N_FEATURE = LENGTH-1
+N_FEATURE = 30
 MODEL_NAME = 'model.pth'
 
 Obs = npt.NDArray[np.float32]
@@ -103,8 +103,8 @@ class MyEnv(TrEnv[Obs, Action]):
 #
 class MyAgent(DQNAgent[Obs, Action]):
     device = 'cuda'
-    replay_size = 1000
-    batch_size = 64
+    replay_size = 100000
+    batch_size = 256
     update_target_every = 5
     report_progress_every = 1
     n_eps = 50
