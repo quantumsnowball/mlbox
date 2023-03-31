@@ -10,7 +10,7 @@ class NeuralNetwork(ABC, nn.Module):
         super().__init__()
 
     @abstractmethod
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, X: Tensor) -> Tensor:
         ...
 
 
@@ -20,24 +20,23 @@ class FullyConnected(NeuralNetwork):
                  output_dim: int,
                  *args: Any,
                  n_hidden_layers: int = 2,
-                 hidden_dim: int = 512,
+                 hidden_dim: int = 32,
                  Activation: type[nn.Module] = nn.ReLU,
                  **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        input_layer = nn.Linear(input_dim, hidden_dim)
-        hidden_layers = [module
-                         for _ in range(n_hidden_layers)
-                         for module in [nn.Linear(hidden_dim, hidden_dim),
-                                        Activation(), ]]
-        output_layer = nn.Linear(hidden_dim, output_dim)
-        self._network = nn.Sequential(
-            input_layer,
-            Activation(),
-            *hidden_layers,
-            output_layer,
-        )
+        # sequential module
+        self._net = nn.Sequential()
+        # input layer
+        self._net.append(nn.Linear(input_dim, hidden_dim))
+        self._net.append(Activation())
+        # hidden layers
+        for _ in range(n_hidden_layers):
+            self._net.append(nn.Linear(hidden_dim, hidden_dim))
+            self._net.append(Activation())
+        # output layer
+        self._net.append(nn.Linear(hidden_dim, output_dim))
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
-        output: Tensor = self._network(x)
-        return output
+    def forward(self, X: Tensor) -> Tensor:
+        y_hat: Tensor = self._net(X)
+        return y_hat
