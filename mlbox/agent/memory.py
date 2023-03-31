@@ -1,6 +1,6 @@
 from collections import deque
 from dataclasses import dataclass
-from typing import Generic, SupportsFloat
+from typing import Any, Generic, SupportsFloat
 
 import numpy as np
 from numpy.typing import NDArray
@@ -19,7 +19,7 @@ class Experience(Generic[T_Obs,
     next_obs: T_Obs
     terminated: bool
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.reward = np.float32(self.reward)
 
 
@@ -58,7 +58,7 @@ class Replay(Dataset[Experience[T_Obs, T_Action]],
                device: str = 'cpu') -> Batch:
         def collate(batch: list[Experience[T_Obs, T_Action]]) -> Batch:
             # avoid create tensor from list of nd.array
-            def to_tensor(arr: NDArray) -> Tensor:
+            def to_tensor(arr: NDArray[Any]) -> Tensor:
                 return tensor(arr, device=device)
             return Batch(
                 obs=to_tensor(np.stack([b.obs for b in batch])),
