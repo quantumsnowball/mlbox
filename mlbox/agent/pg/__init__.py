@@ -119,7 +119,7 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
         with torch.no_grad():
             obs_tensor = tensor(obs, device=self.device)
             dist = self.policy(obs_tensor)
-            result = dist.sample().item()
+            result = dist.sample().cpu().numpy()
             return result
 
     #
@@ -138,4 +138,3 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
         path = Path(path)
         torch.save(self.policy_net.state_dict(), path)
         print(f'Saved model: {path}')
-
