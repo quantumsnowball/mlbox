@@ -3,6 +3,7 @@ from collections import deque
 from pathlib import Path
 
 import torch
+from torch import Tensor, tensor
 from torch.distributions import Categorical
 from torch.nn import Module
 from typing_extensions import override
@@ -38,16 +39,24 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
     #
 
     def policy(self,
-               obs: T_Obs) -> Categorical:
-        obs_tensor = torch.tensor(obs, device=self.device)
-        logits = self.policy_net(obs_tensor)
+               obs: Tensor) -> Categorical:
+        logits = self.policy_net(obs)
         return Categorical(logits=logits)
 
     @override
     def learn(self) -> None:
-        batch = self.buffer.get_batch()
-        breakpoint()
-        raise NotImplementedError()
+        self.policy_net.train()
+        batch = self.buffer.get_batch(device=self.device)
+        obs = batch.obs
+        action = batch.action
+        traj_reward = batch.traj_reward
+        # calc log prob
+        self.optimizer.zero_grad()
+        log_prob = self.policy(obs).log_prob(action)
+        loss = -(log_prob*traj_reward).mean()
+        # gradient ascent
+        loss.backward()
+        self.optimizer.step()
 
     n_eps = 100
     batch_size = 6000
@@ -108,7 +117,8 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
     @override
     def exploit(self, obs: T_Obs) -> T_Action:
         with torch.no_grad():
-            dist = self.policy(obs)
+            obs_tensor = tensor(obs, device=self.device)
+            dist = self.policy(obs_tensor)
             result = dist.sample().item()
             return result
 
