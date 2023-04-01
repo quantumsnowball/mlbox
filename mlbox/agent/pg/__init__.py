@@ -1,13 +1,14 @@
+import itertools
 from collections import deque
 from pathlib import Path
 
-import numpy as np
 import torch
 from torch.distributions import Categorical
 from torch.nn import Module
 from typing_extensions import override
 
 from mlbox.agent.basic import BasicAgent
+from mlbox.agent.pg.memory import Buffer
 from mlbox.trenv.queue import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
@@ -15,6 +16,7 @@ from mlbox.types import T_Action, T_Obs
 class PGAgent(BasicAgent[T_Obs, T_Action]):
     def __init__(self) -> None:
         super().__init__()
+        self.buffer = Buffer[T_Obs, T_Action]()
 
     #
     # props
@@ -43,12 +45,14 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
 
     @override
     def learn(self) -> None:
+        batch = self.buffer.get_batch()
+        breakpoint()
         raise NotImplementedError()
 
     n_eps = 100
     batch_size = 6000
     max_step = 1000
-    print_hash_every = 1
+    print_hash_every = 10
     report_progress_every = 10
     rolling_reward_ma = 5
 
@@ -58,11 +62,13 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
         # episode loop
         rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
         for i_eps in range(1, self.n_eps):
-            # batch loop
-            while True:
+            # only train on current policy experience
+            self.buffer.clear()
+            # trajectory loop
+            for i_batch in itertools.count():
                 # reset to a new environment
                 obs, *_ = self.env.reset()
-                # trajectory loop
+                # step loop
                 for _ in range(self.max_step):
                     # act
                     action = self.exploit(obs)
@@ -74,23 +80,20 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
                         break
                     done = terminated or truncated
                     # cache experience
-                    self.buffer.cache(obs, action, reward,
-                                      next_obs, terminated)
+                    self.buffer.cache(obs, action, reward)
                     # pointing next
                     obs = next_obs
                     if done:
                         break
-                # post processing to cached experience before flush
-                self.buffer.assert_terminated_flag()
                 # flush cache trajectory to memory
                 self.buffer.flush()
                 # report progress
-                if i_eps % self.print_hash_every == 0:
+                if i_batch % self.print_hash_every == 0:
                     print('#', end='', flush=True)
                 # enough traj
                 if len(self.buffer) >= self.batch_size:
                     break
-            # learn from trajectory experience replay
+            # learn from current batch
             self.learn()
             # evulate and report progress
             if i_eps % self.report_progress_every == 0:
