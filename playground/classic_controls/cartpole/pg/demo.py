@@ -36,4 +36,5 @@ class MyAgent(PGAgent[Obs, Action]):
 
 
 agent = MyAgent()
-agent.prompt('model.pth', start_training=True)
+agent.prompt('model.pth', )
+agent.play(200, env=gym.make(ENV, render_mode='human'))
