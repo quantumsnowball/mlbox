@@ -22,6 +22,7 @@ class FullyConnected(NeuralNetwork):
                  n_hidden_layers: int = 2,
                  hidden_dim: int = 32,
                  Activation: type[nn.Module] = nn.ReLU,
+                 OutputActivation: type[nn.Module] | None = None,
                  **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # sequential module
@@ -35,6 +36,8 @@ class FullyConnected(NeuralNetwork):
             self._net.append(Activation())
         # output layer
         self._net.append(nn.Linear(hidden_dim, output_dim))
+        if OutputActivation:
+            self._net.append(OutputActivation())
 
     @override
     def forward(self, X: Tensor) -> Tensor:

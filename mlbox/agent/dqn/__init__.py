@@ -1,23 +1,18 @@
 from collections import deque
-from inspect import currentframe
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import torch
-from gymnasium import Env
 from torch.nn import Module
-from torch.nn.modules.loss import _Loss
-from torch.optim import Optimizer
 from typing_extensions import override
 
-from mlbox.agent import Agent
-from mlbox.agent.memory import CachedReplay
+from mlbox.agent.basic import BasicAgent
+from mlbox.agent.dqn.memory import CachedReplay
 from mlbox.trenv.queue import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
-class DQNAgent(Agent[T_Obs, T_Action]):
+class DQNAgent(BasicAgent[T_Obs, T_Action]):
     # replay memory
     replay_size = 10000
     # learn
@@ -62,28 +57,6 @@ class DQNAgent(Agent[T_Obs, T_Action]):
     @target.setter
     def target(self, target: Module) -> None:
         self._target = target
-
-    @property
-    def optimizer(self) -> Optimizer:
-        try:
-            return self._optimizer
-        except AttributeError:
-            raise NotImplementedError('optimizer') from None
-
-    @optimizer.setter
-    def optimizer(self, optimizer: Optimizer) -> None:
-        self._optimizer = optimizer
-
-    @property
-    def loss_function(self) -> _Loss:
-        try:
-            return self._loss_function
-        except AttributeError:
-            raise NotImplementedError('loss_function') from None
-
-    @loss_function.setter
-    def loss_function(self, loss_function: _Loss) -> None:
-        self._loss_function = loss_function
 
     #
     # training
@@ -192,38 +165,9 @@ class DQNAgent(Agent[T_Obs, T_Action]):
                 mean_reward = sum(rolling_reward)/len(rolling_reward)
                 print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
 
-    @override
-    def play(self,
-             max_step: int,
-             *,
-             env: Env[T_Obs, T_Action] | None = None) -> float:
-        # select env
-        env = env if env is not None else self.env
-        # reset to a new environment
-        obs, *_ = env.reset()
-        # run the env
-        self.policy.eval()
-        total_reward = 0.0
-        for _ in range(max_step):
-            action = self.exploit(obs)
-            try:
-                next_obs, reward, terminated, *_ = env.step(action)
-            except TerminatedError:
-                break
-            obs = next_obs
-            total_reward += float(reward)
-            if terminated:
-                break
-        return total_reward
-
     #
     # acting
     #
-
-    @override
-    def explore(self) -> T_Action:
-        random_action = self.env.action_space.sample()
-        return random_action
 
     @override
     def exploit(self, obs: T_Obs) -> T_Action:
@@ -232,16 +176,6 @@ class DQNAgent(Agent[T_Obs, T_Action]):
             best_value_action = torch.argmax(self.policy(obs_tensor))
             result: T_Action = best_value_action.cpu().numpy()
             return result
-
-    @override
-    def decide(self,
-               obs: T_Obs,
-               *,
-               epsilon: float = 0.5) -> T_Action:
-        if np.random.random() > epsilon:
-            return self.explore()
-        else:
-            return self.exploit(obs)
 
     #
     # I/O
@@ -261,25 +195,3 @@ class DQNAgent(Agent[T_Obs, T_Action]):
         path = Path(path)
         torch.save(self.policy.state_dict(), path)
         print(f'Saved model: {path}')
-
-    @override
-    def prompt(self,
-               name: str,
-               *,
-               start_training: bool = False) -> None:
-        # prepare caller info
-        frame = currentframe()
-        caller_frame = frame.f_back if frame else None
-        globals = caller_frame.f_globals if caller_frame else None
-        script_path = Path(globals['__file__']) if globals else Path()
-        base_dir = Path(script_path).parent.relative_to(Path.cwd())
-        path = base_dir / name
-        if path.is_file():
-            if input(f'Model {path} exists, load? (y/[n]) ').upper() == 'Y':
-                # load agent
-                self.load(path)
-        if start_training or input(f'Start training the agent? ([y]/n) ').upper() != 'N':
-            # train agent
-            self.train()
-            if input(f'Save model? [y]/n) ').upper() != 'N':
-                self.save(path)
