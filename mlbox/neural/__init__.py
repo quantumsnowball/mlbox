@@ -1,45 +1,27 @@
-from abc import ABC, abstractmethod
 from typing import Any
 
-from torch import Tensor, nn
-from typing_extensions import override
+from torch.nn import Linear, Module, ReLU, Sequential
 
 
-class NeuralNetwork(ABC, nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-
-    @abstractmethod
-    def forward(self, X: Tensor) -> Tensor:
-        ...
-
-
-class FullyConnected(NeuralNetwork):
+class FullyConnected(Sequential):
     def __init__(self,
                  input_dim: int,
                  output_dim: int,
                  *args: Any,
                  n_hidden_layers: int = 2,
                  hidden_dim: int = 32,
-                 Activation: type[nn.Module] = nn.ReLU,
-                 OutputActivation: type[nn.Module] | None = None,
+                 Activation: type[Module] = ReLU,
+                 OutputActivation: type[Module] | None = None,
                  **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        # sequential module
-        self._net = nn.Sequential()
         # input layer
-        self._net.append(nn.Linear(input_dim, hidden_dim))
-        self._net.append(Activation())
+        self.append(Linear(input_dim, hidden_dim))
+        self.append(Activation())
         # hidden layers
         for _ in range(n_hidden_layers):
-            self._net.append(nn.Linear(hidden_dim, hidden_dim))
-            self._net.append(Activation())
+            self.append(Linear(hidden_dim, hidden_dim))
+            self.append(Activation())
         # output layer
-        self._net.append(nn.Linear(hidden_dim, output_dim))
+        self.append(Linear(hidden_dim, output_dim))
         if OutputActivation:
-            self._net.append(OutputActivation())
-
-    @override
-    def forward(self, X: Tensor) -> Tensor:
-        y_hat: Tensor = self._net(X)
-        return y_hat
+            self.append(OutputActivation())
