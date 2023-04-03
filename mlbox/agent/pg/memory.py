@@ -14,12 +14,8 @@ class Experience(Generic[T_Obs,
                          T_Action]):
     obs: T_Obs
     action: T_Action
-    reward: SupportsFloat
-    traj_reward: float = 0
-
-    def __post_init__(self) -> None:
-        # post processing
-        self.reward = np.float32(self.reward)
+    reward: float
+    traj_reward: float = 0.0
 
 
 @dataclass
@@ -47,15 +43,17 @@ class Buffer(Generic[T_Obs, T_Action]):
             Experience[T_Obs, T_Action](
                 obs=obs,
                 action=action,
-                reward=reward,
+                reward=float(reward),
             )
         )
 
     def flush(self) -> None:
         traj_reward = sum([float(s.reward) for s in self._cached])
         # fill traj_reward
-        for sample in self._cached:
-            sample.traj_reward = traj_reward
+        cum_reward = 0
+        for s in self._cached:
+            s.traj_reward = traj_reward
+            cum_reward += s.reward
         # flush
         self._memory.extend(self._cached)
         # reset cache
