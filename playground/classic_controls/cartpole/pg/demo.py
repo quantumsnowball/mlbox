@@ -15,11 +15,14 @@ Action = np.int64
 
 
 class MyAgent(PGAgent[Obs, Action]):
-    device = 'cuda'
+    device = 'cpu'
     max_step = 500
     n_eps = 200
-    batch_size = 1000
+    batch_size = 3000
     print_hash_every = 10
+    report_progress_every = 5
+    # variant
+    reward_to_go = True
 
     def __init__(self) -> None:
         super().__init__()
