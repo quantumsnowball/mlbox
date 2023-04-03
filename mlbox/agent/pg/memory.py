@@ -15,14 +15,14 @@ class Experience(Generic[T_Obs,
     obs: T_Obs
     action: T_Action
     reward: float
-    traj_reward: float = 0.0
+    reward_traj: float = 0.0
 
 
 @dataclass
 class Batch:
     obs: Tensor
     action: Tensor
-    traj_reward: Tensor
+    reward_traj: Tensor
 
 
 class Buffer(Generic[T_Obs, T_Action]):
@@ -48,12 +48,12 @@ class Buffer(Generic[T_Obs, T_Action]):
         )
 
     def flush(self) -> None:
-        traj_reward = sum([float(s.reward) for s in self._cached])
-        # fill traj_reward
-        cum_reward = 0
+        reward_traj = sum([float(s.reward) for s in self._cached])
+        # fill reward_traj
+        reward_cum = 0
         for s in self._cached:
-            s.traj_reward = traj_reward
-            cum_reward += s.reward
+            s.reward_traj = reward_traj
+            reward_cum += s.reward
         # flush
         self._memory.extend(self._cached)
         # reset cache
@@ -66,7 +66,7 @@ class Buffer(Generic[T_Obs, T_Action]):
         return Batch(
             obs=to_tensor(np.stack([s.obs for s in self._memory])),
             action=to_tensor(np.array([s.action for s in self._memory])),
-            traj_reward=to_tensor(np.array([s.traj_reward
+            reward_traj=to_tensor(np.array([s.reward_traj
                                             for s in self._memory])),
         )
 
