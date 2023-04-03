@@ -49,10 +49,10 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
     @override
     def learn(self) -> None:
         self.policy_net.train()
-        batch = self.buffer.get_batch(device=self.device)
-        obs = batch.obs
-        action = batch.action
-        weight = batch.reward_to_go if self.reward_to_go else batch.reward_traj
+        b = self.buffer.get_batch(device=self.device)
+        obs = b.obs
+        action = b.action
+        weight = b.reward_to_go if self.reward_to_go else b.reward_traj
         # calc log prob
         self.optimizer.zero_grad()
         log_prob = self.policy(obs).log_prob(action)
