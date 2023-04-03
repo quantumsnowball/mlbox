@@ -49,11 +49,11 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
         batch = self.buffer.get_batch(device=self.device)
         obs = batch.obs
         action = batch.action
-        traj_reward = batch.traj_reward
+        weight = batch.traj_reward
         # calc log prob
         self.optimizer.zero_grad()
         log_prob = self.policy(obs).log_prob(action)
-        loss = -(log_prob*traj_reward).mean()
+        loss = -(log_prob*weight).mean()
         # gradient ascent
         loss.backward()
         self.optimizer.step()
