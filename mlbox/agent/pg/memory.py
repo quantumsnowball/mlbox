@@ -31,7 +31,6 @@ class Batch:
 
 class Buffer(Generic[T_Obs, T_Action]):
     def __init__(self):
-        self._traj_reward = 0
         self._cached = deque[Experience[T_Obs,
                                         T_Action]]()
         self._memory = deque[Experience[T_Obs,
@@ -44,7 +43,6 @@ class Buffer(Generic[T_Obs, T_Action]):
               obs: T_Obs,
               action: T_Action,
               reward: SupportsFloat) -> None:
-        self._traj_reward += float(reward)
         self._cached.append(
             Experience[T_Obs, T_Action](
                 obs=obs,
@@ -54,13 +52,13 @@ class Buffer(Generic[T_Obs, T_Action]):
         )
 
     def flush(self) -> None:
+        traj_reward = sum([float(s.reward) for s in self._cached])
         # fill traj_reward
         for sample in self._cached:
-            sample.traj_reward = self._traj_reward
+            sample.traj_reward = traj_reward
         # flush
         self._memory.extend(self._cached)
         # reset cache
-        self._traj_reward = 0
         self._cached.clear()
 
     def get_batch(self,
