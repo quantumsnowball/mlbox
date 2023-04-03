@@ -15,6 +15,9 @@ from mlbox.types import T_Action, T_Obs
 
 
 class PGAgent(BasicAgent[T_Obs, T_Action]):
+    reward_to_go = False
+    baseline = False
+
     def __init__(self) -> None:
         super().__init__()
         self.buffer = Buffer[T_Obs, T_Action]()
