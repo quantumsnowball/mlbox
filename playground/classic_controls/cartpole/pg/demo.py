@@ -22,7 +22,7 @@ class MyAgent(PGAgent[Obs, Action]):
     print_hash_every = 10
     report_progress_every = 5
     # variant
-    reward_to_go = True
+    reward_to_go = False
     baseline = True
 
     def __init__(self) -> None:
@@ -39,7 +39,7 @@ class MyAgent(PGAgent[Obs, Action]):
         self.baseline_net = FullyConnected(in_dim, 1,
                                            hidden_dim=32,
                                            Activation=ReLU).to(self.device)
-        self.optimizer = Adam(self.policy_net.parameters(), lr=1e-2)
+        self.policy_optimizer = Adam(self.policy_net.parameters(), lr=1e-2)
         self.baseline_optimizer = Adam(self.policy_net.parameters(), lr=1e-3)
 
 

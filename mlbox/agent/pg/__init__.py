@@ -51,6 +51,17 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
         self._baseline_net = baseline_net
 
     @property
+    def policy_optimizer(self) -> Optimizer:
+        try:
+            return self._policy_optimizer
+        except AttributeError:
+            raise NotImplementedError('policy_optimizer') from None
+
+    @policy_optimizer.setter
+    def policy_optimizer(self, policy_optimizer: Optimizer) -> None:
+        self._policy_optimizer = policy_optimizer
+
+    @property
     def baseline_optimizer(self) -> Optimizer:
         try:
             return self._baseline_optimizer
@@ -84,17 +95,16 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
             weight = advantages
         else:
             weight = reward
+
         # learning policy
-        # calc log prob
-        self.optimizer.zero_grad()
+        self.policy_optimizer.zero_grad()
         log_prob = self.policy(obs).log_prob(action)
         loss = -(log_prob*weight).mean()
-        # gradient ascent
         loss.backward()
-        self.optimizer.step()
+        self.policy_optimizer.step()
 
+        # learning state value
         if self.baseline:
-            # learning state value
             baseline_loss = MSELoss()(self.baseline_net(obs).squeeze(1), reward)
             self.baseline_optimizer.zero_grad()
             baseline_loss.backward()
