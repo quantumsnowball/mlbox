@@ -1,11 +1,13 @@
 import itertools
 from collections import deque
 from pathlib import Path
+from typing import Literal
 
 import torch
 from torch import Tensor, tensor
 from torch.distributions import Categorical
-from torch.nn import Module
+from torch.nn import Module, MSELoss
+from torch.optim import Optimizer
 from typing_extensions import override
 
 from mlbox.agent.basic import BasicAgent
@@ -37,6 +39,28 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
     def policy_net(self, policy_net: Module) -> None:
         self._policy_net = policy_net
 
+    @property
+    def baseline_net(self) -> Module:
+        try:
+            return self._baseline_net
+        except AttributeError:
+            raise NotImplementedError('policy') from None
+
+    @baseline_net.setter
+    def baseline_net(self, baseline_net: Module) -> None:
+        self._baseline_net = baseline_net
+
+    @property
+    def baseline_optimizer(self) -> Optimizer:
+        try:
+            return self._baseline_optimizer
+        except AttributeError:
+            raise NotImplementedError('baseline_optimizer') from None
+
+    @baseline_optimizer.setter
+    def baseline_optimizer(self, baseline_optimizer: Optimizer) -> None:
+        self._baseline_optimizer = baseline_optimizer
+
     #
     # training
     #
@@ -52,7 +76,15 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
         b = self.buffer.get_batch(device=self.device)
         obs = b.obs
         action = b.action
-        weight = b.reward_to_go if self.reward_to_go else b.reward_traj
+        reward = b.reward_to_go if self.reward_to_go else b.reward_traj
+        # weight
+        if self.baseline:
+            value = self.baseline_net(obs).squeeze(1)
+            advantages = reward - value
+            weight = advantages
+        else:
+            weight = reward
+        # learning policy
         # calc log prob
         self.optimizer.zero_grad()
         log_prob = self.policy(obs).log_prob(action)
@@ -60,6 +92,13 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
         # gradient ascent
         loss.backward()
         self.optimizer.step()
+
+        if self.baseline:
+            # learning state value
+            baseline_loss = MSELoss()(self.baseline_net(obs).squeeze(1), reward)
+            self.baseline_optimizer.zero_grad()
+            baseline_loss.backward()
+            self.baseline_optimizer.step()
 
     n_eps = 100
     batch_size = 6000

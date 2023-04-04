@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Generic, SupportsFloat
 
 import numpy as np
+import torch
 from numpy.typing import NDArray
 from torch import Tensor, tensor
 
@@ -64,15 +65,16 @@ class Buffer(Generic[T_Obs, T_Action]):
 
     def get_batch(self,
                   device: str = 'cpu') -> Batch:
-        def to_tensor(arr: NDArray[Any]) -> Tensor:
-            return tensor(arr, device=device)
+        def to_tensor(arr: NDArray[Any],
+                      **kwargs: Any) -> Tensor:
+            return tensor(arr, device=device, **kwargs)
         return Batch(
             obs=to_tensor(np.stack([s.obs for s in self._memory])),
             action=to_tensor(np.array([s.action for s in self._memory])),
             reward_traj=to_tensor(np.array([s.reward_traj
-                                            for s in self._memory])),
+                                            for s in self._memory]), dtype=torch.float32),
             reward_to_go=to_tensor(np.array([s.reward_to_go
-                                            for s in self._memory])),
+                                            for s in self._memory]), dtype=torch.float32),
         )
 
     def clear(self) -> None:
