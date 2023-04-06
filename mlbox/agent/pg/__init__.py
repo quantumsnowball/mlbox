@@ -1,11 +1,13 @@
 import itertools
 from collections import deque
 from pathlib import Path
+from typing import Literal
 
 import torch
 from torch import Tensor, tensor
 from torch.distributions import Categorical
-from torch.nn import Module
+from torch.nn import Module, MSELoss
+from torch.optim import Optimizer
 from typing_extensions import override
 
 from mlbox.agent.basic import BasicAgent
@@ -15,6 +17,9 @@ from mlbox.types import T_Action, T_Obs
 
 
 class PGAgent(BasicAgent[T_Obs, T_Action]):
+    reward_to_go = False
+    baseline = False
+
     def __init__(self) -> None:
         super().__init__()
         self.buffer = Buffer[T_Obs, T_Action]()
@@ -34,6 +39,39 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
     def policy_net(self, policy_net: Module) -> None:
         self._policy_net = policy_net
 
+    @property
+    def baseline_net(self) -> Module:
+        try:
+            return self._baseline_net
+        except AttributeError:
+            raise NotImplementedError('policy') from None
+
+    @baseline_net.setter
+    def baseline_net(self, baseline_net: Module) -> None:
+        self._baseline_net = baseline_net
+
+    @property
+    def policy_optimizer(self) -> Optimizer:
+        try:
+            return self._policy_optimizer
+        except AttributeError:
+            raise NotImplementedError('policy_optimizer') from None
+
+    @policy_optimizer.setter
+    def policy_optimizer(self, policy_optimizer: Optimizer) -> None:
+        self._policy_optimizer = policy_optimizer
+
+    @property
+    def baseline_optimizer(self) -> Optimizer:
+        try:
+            return self._baseline_optimizer
+        except AttributeError:
+            raise NotImplementedError('baseline_optimizer') from None
+
+    @baseline_optimizer.setter
+    def baseline_optimizer(self, baseline_optimizer: Optimizer) -> None:
+        self._baseline_optimizer = baseline_optimizer
+
     #
     # training
     #
@@ -46,17 +84,31 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
     @override
     def learn(self) -> None:
         self.policy_net.train()
-        batch = self.buffer.get_batch(device=self.device)
-        obs = batch.obs
-        action = batch.action
-        traj_reward = batch.traj_reward
-        # calc log prob
-        self.optimizer.zero_grad()
+        b = self.buffer.get_batch(device=self.device)
+        obs = b.obs
+        action = b.action
+        reward = b.reward_to_go if self.reward_to_go else b.reward_traj
+        # weight
+        if self.baseline:
+            value = self.baseline_net(obs).squeeze(1)
+            advantages = reward - value
+            weight = advantages
+        else:
+            weight = reward
+
+        # learning policy
+        self.policy_optimizer.zero_grad()
         log_prob = self.policy(obs).log_prob(action)
-        loss = -(log_prob*traj_reward).mean()
-        # gradient ascent
+        loss = -(log_prob*weight).mean()
         loss.backward()
-        self.optimizer.step()
+        self.policy_optimizer.step()
+
+        # learning state value
+        if self.baseline:
+            baseline_loss = MSELoss()(self.baseline_net(obs).squeeze(1), reward)
+            self.baseline_optimizer.zero_grad()
+            baseline_loss.backward()
+            self.baseline_optimizer.step()
 
     n_eps = 100
     batch_size = 6000

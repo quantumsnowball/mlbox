@@ -2,7 +2,7 @@ import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
 from gymnasium.spaces import Box, Discrete
-from torch.nn import Identity, Tanh
+from torch.nn import Identity, ReLU, Tanh
 from torch.optim import Adam
 
 from mlbox.agent.pg import PGAgent
@@ -15,11 +15,15 @@ Action = np.int64
 
 
 class MyAgent(PGAgent[Obs, Action]):
-    device = 'cuda'
+    device = 'cpu'
     max_step = 500
     n_eps = 200
-    batch_size = 1000
+    batch_size = 3000
     print_hash_every = 10
+    report_progress_every = 5
+    # variant
+    reward_to_go = False
+    baseline = True
 
     def __init__(self) -> None:
         super().__init__()
@@ -32,7 +36,11 @@ class MyAgent(PGAgent[Obs, Action]):
                                          hidden_dim=32,
                                          Activation=Tanh,
                                          OutputActivation=Identity).to(self.device)
-        self.optimizer = Adam(self.policy_net.parameters(), lr=1e-2)
+        self.baseline_net = FullyConnected(in_dim, 1,
+                                           hidden_dim=32,
+                                           Activation=ReLU).to(self.device)
+        self.policy_optimizer = Adam(self.policy_net.parameters(), lr=1e-2)
+        self.baseline_optimizer = Adam(self.policy_net.parameters(), lr=1e-3)
 
 
 agent = MyAgent()
