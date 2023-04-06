@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 from gymnasium.spaces import Box, Discrete
-from torch.nn import Identity, Tanh
+from torch.nn import Identity, ReLU, Tanh
 from torch.optim import Adam
 from trbox.backtest import Backtest
 from trbox.broker.paper import PaperEX
@@ -16,7 +16,7 @@ from typing_extensions import override
 from mlbox.agent.pg import PGAgent
 from mlbox.neural import FullyConnected
 from mlbox.trenv import TrEnv
-from mlbox.utils import crop
+from mlbox.utils import crop, pnl_ratio
 
 SYMBOL = 'BTC-USD'
 SYMBOLS = (SYMBOL, )
@@ -26,7 +26,7 @@ LENGTH = 200
 INTERVAL = 5
 STEP = 0.2
 START_LV = 0.01
-N_FEATURE = 30
+N_FEATURE = 150
 MODEL_NAME = 'model.pth'
 
 Obs = npt.NDArray[np.float32]
@@ -39,8 +39,8 @@ Reward = np.float32
 #
 def observe(my: Context[OhlcvWindow]) -> Obs:
     win = my.event.win['Close']
-    pct_chg = win.pct_change().dropna()
-    obs = np.array(pct_chg[-N_FEATURE:], dtype=np.float32)
+    pnlr = pnl_ratio(win)
+    obs = np.array(pnlr[-N_FEATURE:], dtype=np.float32)
     return obs
 
 
@@ -102,11 +102,13 @@ class MyEnv(TrEnv[Obs, Action]):
 # Agent
 #
 class MyAgent(PGAgent[Obs, Action]):
-    device = 'cuda'
-    max_step = 5000
+    device = 'cpu'
+    max_step = 500
     n_eps = 50
-    batch_size = 1000
+    batch_size = 1250
     report_progress_every = 1
+    reward_to_go = True
+    baseline = True
 
     def __init__(self) -> None:
         super().__init__()
@@ -117,8 +119,11 @@ class MyAgent(PGAgent[Obs, Action]):
                                          hidden_dim=32,
                                          Activation=Tanh,
                                          OutputActivation=Identity).to(self.device)
-        self.optimizer = Adam(self.policy_net.parameters(),
-                              lr=1e-2)
+        self.baseline_net = FullyConnected(in_dim, 1,
+                                           hidden_dim=32,
+                                           Activation=ReLU).to(self.device)
+        self.policy_optimizer = Adam(self.policy_net.parameters(), lr=1e-2)
+        self.baseline_optimizer = Adam(self.policy_net.parameters(), lr=1e-3)
 
 
 #
