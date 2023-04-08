@@ -1,6 +1,5 @@
 from collections import deque
 from pathlib import Path
-from typing import Any
 
 import torch
 from torch.nn import Module
@@ -16,18 +15,6 @@ from mlbox.utils.wrapper import assured
 class DQNAgent(BasicAgent[T_Obs, T_Action]):
     # replay memory
     replay_size = 10000
-    # learn
-    n_epoch = 1000
-    batch_size = 512
-    gamma = 0.99
-    # train
-    n_eps = 100
-    max_step = 10000
-    print_hash_every = 1
-    update_target_every = 10
-    report_progress_every = 10
-    rolling_reward_ma = 5
-    tracing_metrics = 'total_return'
 
     def __init__(self) -> None:
         super().__init__()
@@ -62,21 +49,15 @@ class DQNAgent(BasicAgent[T_Obs, T_Action]):
         weights = self.policy.state_dict()
         self.target.load_state_dict(weights)
 
-    @override
-    def learn(self,
-              n_epoch: int | None = None,
-              batch_size: int | None = None,
-              gamma: float | None = None) -> None:
-        if n_epoch is None:
-            n_epoch = self.n_epoch
-        if batch_size is None:
-            batch_size = self.batch_size
-        if gamma is None:
-            gamma = self.gamma
+    n_epoch = 1000
+    batch_size = 512
+    gamma = 0.99
 
-        for _ in range(n_epoch):
+    @override
+    def learn(self) -> None:
+        for _ in range(self.n_epoch):
             # prepare batch of experience
-            batch = self.replay.sample(batch_size, device=self.device)
+            batch = self.replay.sample(self.batch_size, device=self.device)
             obs = batch.obs
             action = batch.action.unsqueeze(1)
             reward = batch.reward.unsqueeze(1)
@@ -92,7 +73,7 @@ class DQNAgent(BasicAgent[T_Obs, T_Action]):
             with torch.no_grad():
                 next_sa_val[non_final_mask] = self.target(
                     non_final_next_obs).max(1).values.unsqueeze(1)
-            expected_sa_val = reward + gamma*next_sa_val
+            expected_sa_val = reward + self.gamma*next_sa_val
             # calc loss
             loss = self.loss_function(sa_val,
                                       expected_sa_val)
@@ -103,34 +84,23 @@ class DQNAgent(BasicAgent[T_Obs, T_Action]):
             # if _ == n_epoch-1:
             #     breakpoint()
 
-    @ override
-    def train(self,
-              n_eps: int | None = None,
-              *,
-              max_step: int | None = None,
-              update_target_every: int | None = None,
-              report_progress_every: int | None = None,
-              tracing_metrics: str | None = None,
-              **kwargs: Any) -> None:
-        if n_eps is None:
-            n_eps = self.n_eps
-        if max_step is None:
-            max_step = self.max_step
-        if update_target_every is None:
-            update_target_every = self.update_target_every
-        if report_progress_every is None:
-            report_progress_every = self.report_progress_every
-        if tracing_metrics is None:
-            tracing_metrics = self.tracing_metrics
+    n_eps = 100
+    max_step = 10000
+    update_target_every = 10
+    report_progress_every = 10
+    print_hash_every = 1
+    rolling_reward_ma = 5
 
+    @ override
+    def train(self) -> None:
         self.policy.train()
         rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
-        for i_eps in range(1, n_eps+1):
-            self.progress = min(max(i_eps/n_eps, 0), 1)
+        for i_eps in range(1, self.n_eps+1):
+            self.progress = min(max(i_eps/self.n_eps, 0), 1)
             # reset to a new environment
             obs, *_ = self.env.reset()
             # run the env
-            for _ in range(max_step):
+            for _ in range(self.max_step):
                 # act
                 action = self.decide(obs, epsilon=self.progress)
                 # step
@@ -151,14 +121,14 @@ class DQNAgent(BasicAgent[T_Obs, T_Action]):
             # flush cache experience to memory
             self.replay.flush()
             # learn from experience replay
-            self.learn(**kwargs)
-            if i_eps % update_target_every == 0:
+            self.learn()
+            if i_eps % self.update_target_every == 0:
                 self.update_target()
             # report progress
             if i_eps % self.print_hash_every == 0:
                 print('#', end='', flush=True)
-            if i_eps % report_progress_every == 0:
-                rolling_reward.append(self.play(max_step))
+            if i_eps % self.report_progress_every == 0:
+                rolling_reward.append(self.play(self.max_step))
                 mean_reward = sum(rolling_reward)/len(rolling_reward)
                 print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
 
