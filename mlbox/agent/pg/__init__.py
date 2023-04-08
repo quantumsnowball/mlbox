@@ -1,69 +1,27 @@
 import itertools
 from collections import deque
 from pathlib import Path
-from typing import Literal
 
 import torch
 from torch import Tensor, tensor
 from torch.distributions import Categorical
-from torch.nn import Module, MSELoss
-from torch.optim import Optimizer
+from torch.nn import MSELoss
 from typing_extensions import override
 
 from mlbox.agent.basic import BasicAgent
 from mlbox.agent.pg.memory import Buffer
+from mlbox.agent.pg.props import PGProps
 from mlbox.trenv.queue import TerminatedError
 from mlbox.types import T_Action, T_Obs
-from mlbox.utils.wrapper import assured
 
 
-class PGAgent(BasicAgent[T_Obs, T_Action]):
+class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
     reward_to_go = False
     baseline = False
 
     def __init__(self) -> None:
         super().__init__()
         self.buffer = Buffer[T_Obs, T_Action]()
-
-    #
-    # props
-    #
-
-    @property
-    @assured
-    def policy_net(self) -> Module:
-        return self._policy_net
-
-    @policy_net.setter
-    def policy_net(self, policy_net: Module) -> None:
-        self._policy_net = policy_net
-
-    @property
-    @assured
-    def baseline_net(self) -> Module:
-        return self._baseline_net
-
-    @baseline_net.setter
-    def baseline_net(self, baseline_net: Module) -> None:
-        self._baseline_net = baseline_net
-
-    @property
-    @assured
-    def policy_optimizer(self) -> Optimizer:
-        return self._policy_optimizer
-
-    @policy_optimizer.setter
-    def policy_optimizer(self, policy_optimizer: Optimizer) -> None:
-        self._policy_optimizer = policy_optimizer
-
-    @property
-    @assured
-    def baseline_optimizer(self) -> Optimizer:
-        return self._baseline_optimizer
-
-    @baseline_optimizer.setter
-    def baseline_optimizer(self, baseline_optimizer: Optimizer) -> None:
-        self._baseline_optimizer = baseline_optimizer
 
     #
     # training
