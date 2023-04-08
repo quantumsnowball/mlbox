@@ -3,6 +3,8 @@ from pathlib import Path
 
 import torch
 from torch.nn import Module
+from torch.nn.modules.loss import _Loss
+from torch.optim import Optimizer
 from typing_extensions import override
 
 from mlbox.agent.basic import BasicAgent
@@ -41,6 +43,24 @@ class DQNAgent(BasicAgent[T_Obs, T_Action]):
     @target.setter
     def target(self, target: Module) -> None:
         self._target = target
+
+    @property
+    @assured
+    def optimizer(self) -> Optimizer:
+        return self._optimizer
+
+    @optimizer.setter
+    def optimizer(self, optimizer: Optimizer) -> None:
+        self._optimizer = optimizer
+
+    @property
+    @assured
+    def loss_function(self) -> _Loss:
+        return self._loss_function
+
+    @loss_function.setter
+    def loss_function(self, loss_function: _Loss) -> None:
+        self._loss_function = loss_function
 
     #
     # training
