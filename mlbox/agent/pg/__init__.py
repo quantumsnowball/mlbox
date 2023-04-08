@@ -14,6 +14,7 @@ from mlbox.agent.basic import BasicAgent
 from mlbox.agent.pg.memory import Buffer
 from mlbox.trenv.queue import TerminatedError
 from mlbox.types import T_Action, T_Obs
+from mlbox.utils.wrapper import assured
 
 
 class PGAgent(BasicAgent[T_Obs, T_Action]):
@@ -29,44 +30,36 @@ class PGAgent(BasicAgent[T_Obs, T_Action]):
     #
 
     @property
+    @assured
     def policy_net(self) -> Module:
-        try:
-            return self._policy_net
-        except AttributeError:
-            raise NotImplementedError('policy') from None
+        return self._policy_net
 
     @policy_net.setter
     def policy_net(self, policy_net: Module) -> None:
         self._policy_net = policy_net
 
     @property
+    @assured
     def baseline_net(self) -> Module:
-        try:
-            return self._baseline_net
-        except AttributeError:
-            raise NotImplementedError('policy') from None
+        return self._baseline_net
 
     @baseline_net.setter
     def baseline_net(self, baseline_net: Module) -> None:
         self._baseline_net = baseline_net
 
     @property
+    @assured
     def policy_optimizer(self) -> Optimizer:
-        try:
-            return self._policy_optimizer
-        except AttributeError:
-            raise NotImplementedError('policy_optimizer') from None
+        return self._policy_optimizer
 
     @policy_optimizer.setter
     def policy_optimizer(self, policy_optimizer: Optimizer) -> None:
         self._policy_optimizer = policy_optimizer
 
     @property
+    @assured
     def baseline_optimizer(self) -> Optimizer:
-        try:
-            return self._baseline_optimizer
-        except AttributeError:
-            raise NotImplementedError('baseline_optimizer') from None
+        return self._baseline_optimizer
 
     @baseline_optimizer.setter
     def baseline_optimizer(self, baseline_optimizer: Optimizer) -> None:

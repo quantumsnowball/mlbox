@@ -11,6 +11,7 @@ from typing_extensions import override
 from mlbox.agent import Agent
 from mlbox.trenv.queue import TerminatedError
 from mlbox.types import T_Action, T_Obs
+from mlbox.utils.wrapper import assured
 
 
 class BasicAgent(Agent[T_Obs, T_Action]):
@@ -37,22 +38,18 @@ class BasicAgent(Agent[T_Obs, T_Action]):
     #
 
     @property
+    @assured
     def optimizer(self) -> Optimizer:
-        try:
-            return self._optimizer
-        except AttributeError:
-            raise NotImplementedError('optimizer') from None
+        return self._optimizer
 
     @optimizer.setter
     def optimizer(self, optimizer: Optimizer) -> None:
         self._optimizer = optimizer
 
     @property
+    @assured
     def loss_function(self) -> _Loss:
-        try:
-            return self._loss_function
-        except AttributeError:
-            raise NotImplementedError('loss_function') from None
+        return self._loss_function
 
     @loss_function.setter
     def loss_function(self, loss_function: _Loss) -> None:

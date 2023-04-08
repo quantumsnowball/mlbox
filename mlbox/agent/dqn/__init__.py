@@ -10,6 +10,7 @@ from mlbox.agent.basic import BasicAgent
 from mlbox.agent.dqn.memory import CachedReplay
 from mlbox.trenv.queue import TerminatedError
 from mlbox.types import T_Action, T_Obs
+from mlbox.utils.wrapper import assured
 
 
 class DQNAgent(BasicAgent[T_Obs, T_Action]):
@@ -37,22 +38,18 @@ class DQNAgent(BasicAgent[T_Obs, T_Action]):
     #
 
     @property
+    @assured
     def policy(self) -> Module:
-        try:
-            return self._policy
-        except AttributeError:
-            raise NotImplementedError('policy') from None
+        return self._policy
 
     @policy.setter
     def policy(self, policy: Module) -> None:
         self._policy = policy
 
     @property
+    @assured
     def target(self) -> Module:
-        try:
-            return self._target
-        except AttributeError:
-            raise NotImplementedError('target') from None
+        return self._target
 
     @target.setter
     def target(self, target: Module) -> None:
