@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from threading import Event, Thread
 from typing import Any, Self, SupportsFloat
 
-import numpy as np
 from gymnasium import Env
 from pandas import Timestamp
 from trbox.broker.paper import PaperEX
@@ -14,7 +13,8 @@ from trbox.strategy.context import Context
 from trbox.strategy.types import Hook
 from trbox.trader import Trader
 
-from mlbox.trenv.queue import TerminatedError, TrEnvQueue
+from mlbox.events import TerminatedError
+from mlbox.trenv.queue import TrEnvQueue
 from mlbox.trenv.strategy import TrEnvStrategy
 from mlbox.types import T_Action, T_Obs
 

@@ -2,12 +2,11 @@ from inspect import currentframe
 from pathlib import Path
 from typing import Literal, Self
 
-import numpy as np
 from gymnasium import Env
 from typing_extensions import override
 
 from mlbox.agent import Agent
-from mlbox.trenv.queue import TerminatedError
+from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
 from mlbox.utils.wrapper import assured
 

@@ -11,7 +11,7 @@ from typing_extensions import override
 from mlbox.agent.basic import BasicAgent
 from mlbox.agent.pg.memory import Buffer
 from mlbox.agent.pg.props import PGProps
-from mlbox.trenv.queue import TerminatedError
+from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 

@@ -3,14 +3,7 @@ from typing import Any, TypeVar
 
 from typing_extensions import override
 
-
-class Terminated:
-    pass
-
-
-class TerminatedError(Exception):
-    pass
-
+from mlbox.events import Terminated, TerminatedError
 
 T = TypeVar('T')
 

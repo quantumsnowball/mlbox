@@ -9,7 +9,7 @@ from mlbox.agent import EpsilonGreedyStrategy
 from mlbox.agent.basic import BasicAgent
 from mlbox.agent.dqn.memory import CachedReplay
 from mlbox.agent.dqn.props import DQNProps
-from mlbox.trenv.queue import TerminatedError
+from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
