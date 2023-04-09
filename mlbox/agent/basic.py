@@ -61,7 +61,7 @@ class BasicAgent(Agent[T_Obs, T_Action]):
         # run the env
         total_reward = 0.0
         for _ in range(max_step):
-            action = self.exploit(obs)
+            action = self.decide(obs)
             try:
                 next_obs, reward, terminated, *_ = env.step(action)
             except TerminatedError:
@@ -71,25 +71,6 @@ class BasicAgent(Agent[T_Obs, T_Action]):
             if terminated:
                 break
         return total_reward
-
-    #
-    # acting
-    #
-
-    @override
-    def explore(self) -> T_Action:
-        random_action = self.env.action_space.sample()
-        return random_action
-
-    @override
-    def decide(self,
-               obs: T_Obs,
-               *,
-               epsilon: float = 0.5) -> T_Action:
-        if np.random.random() > epsilon:
-            return self.explore()
-        else:
-            return self.exploit(obs)
 
     #
     # I/O

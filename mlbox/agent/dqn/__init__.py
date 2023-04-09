@@ -1,9 +1,11 @@
 from collections import deque
 from pathlib import Path
 
+import numpy as np
 import torch
 from typing_extensions import override
 
+from mlbox.agent import EpsilonGreedyStrategy
 from mlbox.agent.basic import BasicAgent
 from mlbox.agent.dqn.memory import CachedReplay
 from mlbox.agent.dqn.props import DQNProps
@@ -11,7 +13,7 @@ from mlbox.trenv.queue import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
-class DQNAgent(BasicAgent[T_Obs, T_Action], DQNProps):
+class DQNAgent(BasicAgent[T_Obs, T_Action], EpsilonGreedyStrategy, DQNProps):
     # replay memory
     replay_size = 10000
 
@@ -114,12 +116,27 @@ class DQNAgent(BasicAgent[T_Obs, T_Action], DQNProps):
     #
 
     @override
+    def explore(self) -> T_Action:
+        random_action = self.env.action_space.sample()
+        return random_action
+
+    @override
     def exploit(self, obs: T_Obs) -> T_Action:
         with torch.no_grad():
             obs_tensor = torch.tensor(obs, device=self.device)
             best_value_action = torch.argmax(self.policy(obs_tensor))
             result: T_Action = best_value_action.cpu().numpy()
             return result
+
+    @override
+    def decide(self,
+               obs: T_Obs,
+               *,
+               epsilon: float = 1.0) -> T_Action:
+        if np.random.random() > epsilon:
+            return self.explore()
+        else:
+            return self.exploit(obs)
 
     #
     # I/O

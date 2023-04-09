@@ -22,7 +22,7 @@ class MyAgent(PGAgent[Obs, Action]):
     print_hash_every = 10
     report_progress_every = 5
     # variant
-    reward_to_go = False
+    reward_to_go = True
     baseline = True
 
     def __init__(self) -> None:

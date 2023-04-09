@@ -83,7 +83,7 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
                 # step loop
                 for _ in range(self.max_step):
                     # act
-                    action = self.exploit(obs)
+                    action = self.decide(obs)
                     # step
                     try:
                         next_obs, reward, terminated, truncated, *_ = \
@@ -118,7 +118,7 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
     #
 
     @override
-    def exploit(self, obs: T_Obs) -> T_Action:
+    def decide(self, obs: T_Obs) -> T_Action:
         with torch.no_grad():
             obs_tensor = tensor(obs, device=self.device)
             dist = self.policy(obs_tensor)

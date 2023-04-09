@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Generic
+from typing import Any, Generic
 
 from gymnasium import Env
 
@@ -17,21 +17,11 @@ class Agent(ABC, Generic[T_Obs, T_Action]):
     #
 
     @abstractmethod
-    def explore(self) -> T_Action:
-        ''' take a random action '''
-        ...
-
-    @abstractmethod
-    def exploit(self, obs: T_Obs) -> T_Action:
-        ''' take an action decided by the policy '''
-        ...
-
-    @abstractmethod
     def decide(self,
                obs: T_Obs,
-               *,
-               epsilon: float) -> T_Action:
-        ''' explore or exploit an action base on epsilon greedy algorithm '''
+               *agrs: Any,
+               **kwargs: Any) -> T_Action:
+        ''' given an observation choose an action '''
         ...
 
     #
@@ -76,4 +66,24 @@ class Agent(ABC, Generic[T_Obs, T_Action]):
     @abstractmethod
     def prompt(self,
                name: str) -> None:
+        ...
+
+
+class EpsilonGreedyStrategy(ABC, Generic[T_Obs, T_Action]):
+    @abstractmethod
+    def explore(self) -> T_Action:
+        ''' take a random action '''
+        ...
+
+    @abstractmethod
+    def exploit(self, obs: T_Obs) -> T_Action:
+        ''' take an action decided by the policy '''
+        ...
+
+    @abstractmethod
+    def decide(self,
+               obs: T_Obs,
+               *,
+               epsilon: float = 1) -> T_Action:
+        ''' explore or exploit an action base on epsilon greedy algorithm '''
         ...
