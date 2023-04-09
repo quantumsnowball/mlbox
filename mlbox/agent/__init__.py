@@ -18,9 +18,7 @@ class Agent(ABC, Generic[T_Obs, T_Action]):
 
     @abstractmethod
     def decide(self,
-               obs: T_Obs,
-               *agrs: Any,
-               **kwargs: Any) -> T_Action:
+               obs: T_Obs) -> T_Action:
         ''' given an observation choose an action '''
         ...
 
@@ -29,10 +27,7 @@ class Agent(ABC, Generic[T_Obs, T_Action]):
     #
 
     @abstractmethod
-    def learn(self,
-              n_epoch: int,
-              batch_size: int,
-              gamma: float) -> None:
+    def learn(self) -> None:
         ''' learn from replay experience '''
         ...
 

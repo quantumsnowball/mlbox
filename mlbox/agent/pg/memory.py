@@ -29,7 +29,7 @@ class Batch:
 
 
 class Buffer(Generic[T_Obs, T_Action]):
-    def __init__(self):
+    def __init__(self) -> None:
         self._cached = deque[Experience[T_Obs,
                                         T_Action]]()
         self._memory = deque[Experience[T_Obs,
@@ -53,7 +53,7 @@ class Buffer(Generic[T_Obs, T_Action]):
     def flush(self) -> None:
         reward_traj = sum([float(s.reward) for s in self._cached])
         # fill traj-wise info
-        reward_cum = 0
+        reward_cum = 0.0
         for s in self._cached:
             s.reward_traj = reward_traj
             s.reward_to_go = reward_traj - reward_cum

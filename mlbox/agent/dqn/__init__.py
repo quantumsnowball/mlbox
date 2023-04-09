@@ -13,7 +13,9 @@ from mlbox.trenv.queue import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
-class DQNAgent(BasicAgent[T_Obs, T_Action], EpsilonGreedyStrategy, DQNProps):
+class DQNAgent(BasicAgent[T_Obs, T_Action],
+               EpsilonGreedyStrategy[T_Obs, T_Action],
+               DQNProps):
     # replay memory
     replay_size = 10000
 
@@ -125,7 +127,7 @@ class DQNAgent(BasicAgent[T_Obs, T_Action], EpsilonGreedyStrategy, DQNProps):
         with torch.no_grad():
             obs_tensor = torch.tensor(obs, device=self.device)
             best_value_action = torch.argmax(self.policy(obs_tensor))
-            result: T_Action = best_value_action.cpu().numpy()
+            result = best_value_action.cpu().numpy()
             return result
 
     @override
