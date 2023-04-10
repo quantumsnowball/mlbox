@@ -2,39 +2,17 @@ import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from gymnasium.spaces import Box, Discrete
 from torch import Tensor
 
 from mlbox.agent.a2c import A2CAgent
+from mlbox.agent.a2c.nn import ActorCriticNet
 
 ENV = 'CartPole-v1'
 
 Obs = npt.NDArray[np.float32]
 Action = np.int64
-
-
-class ActorCriticNet(nn.Module):
-    def __init__(self,
-                 state_dim: int,
-                 action_dim: int,
-                 hidden_dim: int = 64):
-        super().__init__()
-        self.actor_fc1 = nn.Linear(state_dim, hidden_dim)
-        self.actor_fc2 = nn.Linear(hidden_dim, action_dim)
-        self.critic_fc1 = nn.Linear(state_dim, hidden_dim)
-        self.critic_fc2 = nn.Linear(hidden_dim, 1)
-
-    def forward(self, obs: Tensor):
-        # action probs
-        actor_x = F.relu(self.actor_fc1(obs))
-        action_probs = F.softmax(self.actor_fc2(actor_x), dim=-1)
-        # state value
-        critic_x = F.relu(self.critic_fc1(obs))
-        state_value = self.critic_fc2(critic_x)
-        # return
-        return action_probs, state_value
 
 
 class MyAgent(A2CAgent[Obs, Action]):

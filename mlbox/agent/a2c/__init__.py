@@ -35,7 +35,6 @@ class A2CAgent(BasicAgent[T_Obs, T_Action], A2CProps):
         log_prob = torch.log(policy.gather(1, action.unsqueeze(1)))
         policy_loss = -(log_prob * advantage).mean()
         value_loss = delta.pow(2).mean()
-
         # Update the actor-critic network using the combined loss
         loss = policy_loss + 0.5 * value_loss
         self.optimizer.zero_grad()
@@ -53,7 +52,7 @@ class A2CAgent(BasicAgent[T_Obs, T_Action], A2CProps):
         self.actor_critic_net.train()
         # episode loop
         rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
-        for i_eps in range(1, self.n_eps):
+        for i_eps in range(1, self.n_eps+1):
             # only train on current policy experience
             self.buffer.clear()
             # reset to a new environment
