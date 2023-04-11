@@ -17,7 +17,7 @@ Action = np.int64
 
 class MyAgent(A2CAgent[Obs, Action]):
     device = 'cpu'
-    max_step = 500
+    max_step = 1000
     n_eps = 2000
     print_hash_every = 10
     rolling_reward_ma = 5
