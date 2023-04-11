@@ -24,19 +24,19 @@ class A2CAgent(BasicAgent[T_Obs, T_Action], A2CProps):
     def learn(self) -> None:
         self.actor_critic_net.train()
         # batch
-        obs, action, reward, next_obs, terminated = \
-            self.buffer.recall(self.device).tuple
+        obs, action, reward, next_obs, terminated = self.buffer.recall(self.device).tuple
         # actor and critic
         policy, value = self.actor_critic_net(obs)
         _, next_value = self.actor_critic_net(next_obs)
-        delta = reward.unsqueeze(1) + self.gamma * next_value * (~terminated.unsqueeze(1)) - value
-        advantage = delta.detach()
+        value_target = reward.unsqueeze(1) + self.gamma * next_value * (~terminated.unsqueeze(1))
+        delta = value_target - value
         # Compute the policy loss and value loss
         log_prob = torch.log(policy.gather(1, action.unsqueeze(1)))
+        advantage = delta.detach()
         policy_loss = -(log_prob * advantage).mean()
         value_loss = delta.pow(2).mean()
-        # Update the actor-critic network using the combined loss
         loss = policy_loss + 0.5 * value_loss
+        # Update the actor-critic network using the combined loss
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
