@@ -53,6 +53,44 @@ class A2CAgent(BasicAgent[T_Obs, T_Action], A2CProps):
         # episode loop
         rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
         for i_eps in range(1, self.n_eps+1):
+            try:
+                # only train on current policy experience
+                self.buffer.clear()
+                # reset to a new environment
+                obs, *_ = self.env.reset()
+                # step loop
+                for _ in range(self.max_step):
+                    # act
+                    action = self.decide(obs)
+                    # step
+                    try:
+                        next_obs, reward, terminated, truncated, *_ = \
+                            self.env.step(action)
+                    except TerminatedError:
+                        break
+                    done = terminated or truncated
+                    # cache experience
+                    self.buffer.cache(obs, action, reward, next_obs, done)
+                    # pointing next
+                    obs = next_obs
+                    if done:
+                        break
+                # flush cache trajectory to memory
+                self.buffer.flush()
+                # learn from current batch
+                self.learn()
+                # report progress
+                if i_eps % self.print_hash_every == 0:
+                    print('#', end='', flush=True)
+                # evulate and report progress
+                if i_eps % self.report_progress_every == 0:
+                    rolling_reward.append(self.play(self.max_step))
+                    mean_reward = sum(rolling_reward)/len(rolling_reward)
+                    print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
+            except KeyboardInterrupt:
+                print(f'\nManually stopped training loop')
+                break
+
             # only train on current policy experience
             self.buffer.clear()
             # reset to a new environment
