@@ -8,7 +8,7 @@ import torch.optim as optim
 from gymnasium.spaces import Box, Discrete
 from torch import Tensor
 
-from mlbox.agent.a2c import A2CAgent
+from mlbox.agent.a2c import A2CDiscreteAgent
 
 ENV = 'CartPole-v1'
 
@@ -40,7 +40,7 @@ class ActorCriticNet(nn.Module):
 
 @pytest.mark.parametrize('run_on', ('cpu', 'cuda'))
 def test_a2c(run_on):
-    class MyAgent(A2CAgent[Obs, Action]):
+    class MyAgent(A2CDiscreteAgent[Obs, Action]):
         device = run_on
         max_step = 500
         n_eps = 1500

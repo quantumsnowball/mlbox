@@ -3,15 +3,15 @@ import torch.nn.functional as F
 from torch import Tensor
 
 
-class ActorCriticNet(nn.Module):
+class ActorCriticDiscrete(nn.Module):
     def __init__(self,
-                 state_dim: int,
-                 action_dim: int,
+                 input_dim: int,
+                 output_dim: int,
                  hidden_dim: int = 64):
         super().__init__()
-        self.actor_fc1 = nn.Linear(state_dim, hidden_dim)
-        self.actor_fc2 = nn.Linear(hidden_dim, action_dim)
-        self.critic_fc1 = nn.Linear(state_dim, hidden_dim)
+        self.actor_fc1 = nn.Linear(input_dim, hidden_dim)
+        self.actor_fc2 = nn.Linear(hidden_dim, output_dim)
+        self.critic_fc1 = nn.Linear(input_dim, hidden_dim)
         self.critic_fc2 = nn.Linear(hidden_dim, 1)
 
     def forward(self, obs: Tensor):
