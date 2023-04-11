@@ -29,7 +29,7 @@ class A2CAgent(BasicAgent[T_Obs, T_Action], A2CProps):
         # actor and critic
         policy, value = self.actor_critic_net(obs)
         _, next_value = self.actor_critic_net(next_obs)
-        delta = reward + self.gamma * next_value * (~terminated) - value
+        delta = reward.unsqueeze(1) + self.gamma * next_value * (~terminated.unsqueeze(1)) - value
         advantage = delta.detach()
         # Compute the policy loss and value loss
         log_prob = torch.log(policy.gather(1, action.unsqueeze(1)))
