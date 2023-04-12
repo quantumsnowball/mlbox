@@ -71,47 +71,56 @@ class DQNAgent(BasicAgent[T_Obs, T_Action],
     report_progress_every = 10
     print_hash_every = 1
     rolling_reward_ma = 5
+    render_every: int | None = None
 
     @ override
     def train(self) -> None:
         self.policy.train()
         rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
         for i_eps in range(1, self.n_eps+1):
-            self.progress = min(max(i_eps/self.n_eps, 0), 1)
-            # reset to a new environment
-            obs, *_ = self.env.reset()
-            # run the env
-            for _ in range(self.max_step):
-                # act
-                action = self.decide(obs, epsilon=self.progress)
-                # step
-                try:
-                    next_obs, reward, terminated, truncated, *_ = \
-                        self.env.step(action)
-                except TerminatedError:
-                    break
-                done = terminated or truncated
-                # cache experience
-                self.replay.cache(obs, action, reward, next_obs, terminated)
-                # pointing next
-                obs = next_obs
-                if done:
-                    break
-            # post processing to cached experience before flush
-            self.replay.assert_terminated_flag()
-            # flush cache experience to memory
-            self.replay.flush()
-            # learn from experience replay
-            self.learn()
-            if i_eps % self.update_target_every == 0:
-                self.update_target()
-            # report progress
-            if i_eps % self.print_hash_every == 0:
-                print('#', end='', flush=True)
-            if i_eps % self.report_progress_every == 0:
-                rolling_reward.append(self.play(self.max_step))
-                mean_reward = sum(rolling_reward)/len(rolling_reward)
-                print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
+            try:
+                self.progress = min(max(i_eps/self.n_eps, 0), 1)
+                # reset to a new environment
+                obs, *_ = self.env.reset()
+                # run the env
+                for _ in range(self.max_step):
+                    # act
+                    action = self.decide(obs, epsilon=self.progress)
+                    # step
+                    try:
+                        next_obs, reward, terminated, truncated, *_ = \
+                            self.env.step(action)
+                    except TerminatedError:
+                        break
+                    done = terminated or truncated
+                    # cache experience
+                    self.replay.cache(obs, action, reward, next_obs, terminated)
+                    # pointing next
+                    obs = next_obs
+                    if done:
+                        break
+                # post processing to cached experience before flush
+                self.replay.assert_terminated_flag()
+                # flush cache experience to memory
+                self.replay.flush()
+                # learn from experience replay
+                self.learn()
+                if i_eps % self.update_target_every == 0:
+                    self.update_target()
+                # report progress
+                if i_eps % self.print_hash_every == 0:
+                    print('#', end='', flush=True)
+                # evulate and report progress
+                if i_eps % self.report_progress_every == 0:
+                    rolling_reward.append(self.play(self.max_step))
+                    mean_reward = sum(rolling_reward)/len(rolling_reward)
+                    print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
+                # render result
+                if self.render_every is not None and i_eps % self.render_every == 0:
+                    self.play(self.max_step, env=self.render_env)
+            except KeyboardInterrupt:
+                print(f'\nManually stopped training loop')
+                break
 
     #
     # acting
