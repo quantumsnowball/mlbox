@@ -15,7 +15,7 @@ Action = npt.NDArray[np.float32]
 
 class MyAgent(A2CContinuousAgent[Obs, Action]):
     ''' still not solved '''
-    device = 'cuda'
+    device = 'cpu'
     max_step = 500
     n_eps = 5000
     print_hash_every = 5
@@ -31,10 +31,13 @@ class MyAgent(A2CContinuousAgent[Obs, Action]):
         assert isinstance(self.env.action_space, Box)
         in_dim = self.env.observation_space.shape[0]
         out_dim = self.env.action_space.shape[0]*2
-        self.actor_critic_net = ActorCriticContinuous(in_dim, out_dim).to(self.device)
+        self.actor_critic_net = ActorCriticContinuous(in_dim, out_dim,
+                                                      mu_clip=True,
+                                                      mu_scale=2.0).to(self.device)
         self.optimizer = optim.Adam(self.actor_critic_net.parameters(),
                                     lr=1e-2)
 
 
 agent = MyAgent()
 agent.prompt('model.pth')
+agent.play(agent.max_step, env=agent.render_env)
