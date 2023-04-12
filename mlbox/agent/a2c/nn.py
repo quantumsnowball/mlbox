@@ -6,24 +6,35 @@ from torch.distributions import Categorical, Normal
 
 class ActorCriticDiscrete(nn.Module):
     def __init__(self,
-                 input_dim: int,
-                 output_dim: int,
-                 hidden_dim: int = 64):
+                 in_dim: int,
+                 out_dim: int,
+                 *,
+                 hidden_dim: int = 64,
+                 base_n: int = 0,
+                 actor_n: int = 0,
+                 critic_n: int = 0):
         super().__init__()
-        self.base = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-        )
-        # actor
-        self.actor = nn.Sequential(
-            nn.Linear(hidden_dim, output_dim),
-        )
+        # base layer
+        self.base = nn.Sequential()
+        self.base.append(nn.Linear(in_dim, hidden_dim))
+        self.base.append(nn.ReLU())
+        for _ in range(base_n):
+            self.base.append(nn.Linear(hidden_dim, hidden_dim))
+            self.base.append(nn.ReLU())
+        # actor layer
+        self.actor = nn.Sequential()
+        for _ in range(actor_n):
+            self.actor.append(nn.Linear(hidden_dim, hidden_dim))
+            self.actor.append(nn.ReLU())
+        self.actor.append(nn.Linear(hidden_dim, out_dim))
         # policy
         self.dist = Categorical  # DON'T define this inside forward()
         # critic
-        self.critic = nn.Sequential(
-            nn.Linear(hidden_dim, 1),
-        )
+        self.critic = nn.Sequential()
+        for _ in range(critic_n):
+            self.critic.append(nn.Linear(hidden_dim, hidden_dim))
+            self.critic.append(nn.ReLU())
+        self.critic.append(nn.Linear(hidden_dim, 1))
 
     def forward(self, obs: Tensor):
         base_out = self.base(obs)
