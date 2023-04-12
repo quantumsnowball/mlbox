@@ -20,10 +20,12 @@ class MyAgent(A2CDiscreteAgent[Obs, Action]):
     print_hash_every = 10
     rolling_reward_ma = 5
     report_progress_every = 100
+    render_every = 250
 
     def __init__(self) -> None:
         super().__init__()
         self.env = gym.make(ENV)
+        self.render_env = gym.make(ENV, render_mode='human')
         assert isinstance(self.env.observation_space, Box)
         assert isinstance(self.env.action_space, Discrete)
         in_dim = self.env.observation_space.shape[0]
@@ -35,4 +37,4 @@ class MyAgent(A2CDiscreteAgent[Obs, Action]):
 
 agent = MyAgent()
 agent.prompt('model.pth')
-agent.play(500, env=gym.make(ENV, render_mode='human'))
+agent.play(1000, env=agent.render_env)

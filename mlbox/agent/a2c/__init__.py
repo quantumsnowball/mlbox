@@ -6,7 +6,6 @@ from torch.distributions import Categorical
 from typing_extensions import override
 
 from mlbox.agent.a2c.memory import Buffer
-from mlbox.agent.a2c.noise import OrnsteinUhlenbeckNoise
 from mlbox.agent.a2c.props import A2CProps
 from mlbox.agent.basic import BasicAgent
 from mlbox.events import TerminatedError
@@ -68,6 +67,7 @@ class A2CDiscreteAgent(A2CAgent[T_Obs, T_Action]):
     print_hash_every = 10
     rolling_reward_ma = 5
     report_progress_every = 10
+    render_every: int | None = None
 
     @override
     def train(self) -> None:
@@ -109,6 +109,9 @@ class A2CDiscreteAgent(A2CAgent[T_Obs, T_Action]):
                     rolling_reward.append(self.play(self.max_step))
                     mean_reward = sum(rolling_reward)/len(rolling_reward)
                     print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
+                # render result
+                if self.render_every is not None and i_eps % self.render_every == 0:
+                    self.play(self.max_step, env=self.render_env)
             except KeyboardInterrupt:
                 print(f'\nManually stopped training loop')
                 break
@@ -130,7 +133,6 @@ class A2CDiscreteAgent(A2CAgent[T_Obs, T_Action]):
 class A2CContinuousAgent(A2CAgent[T_Obs, T_Action]):
     def __init__(self) -> None:
         super().__init__()
-        self.ou_noise = OrnsteinUhlenbeckNoise(2)
 
     gamma = 0.99
     lr = 1e-3
@@ -148,9 +150,10 @@ class A2CContinuousAgent(A2CAgent[T_Obs, T_Action]):
         # Compute the policy loss and value loss
         log_prob = policy.log_prob(action)
         advantage = delta.detach()
-        policy_loss = -(log_prob * advantage).mean()
+        policy_loss = - (log_prob * advantage).mean()
         value_loss = delta.pow(2).mean()
-        loss = policy_loss + 0.5 * value_loss
+        entropy_loss = -0.01 * policy.entropy().mean()
+        loss = policy_loss + value_loss + entropy_loss
         # Update the actor-critic network using the combined loss
         self.optimizer.zero_grad()
         loss.backward()
@@ -161,6 +164,7 @@ class A2CContinuousAgent(A2CAgent[T_Obs, T_Action]):
     print_hash_every = 10
     rolling_reward_ma = 5
     report_progress_every = 10
+    render_every: int | None = None
 
     @override
     def train(self) -> None:
@@ -177,7 +181,6 @@ class A2CContinuousAgent(A2CAgent[T_Obs, T_Action]):
                 for _ in range(self.max_step):
                     # act
                     action = self.decide(obs)
-                    action += self.ou_noise()
                     # step
                     try:
                         next_obs, reward, terminated, truncated, *_ = self.env.step(action)
@@ -202,6 +205,10 @@ class A2CContinuousAgent(A2CAgent[T_Obs, T_Action]):
                     rolling_reward.append(self.play(self.max_step))
                     mean_reward = sum(rolling_reward)/len(rolling_reward)
                     print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
+                # render result
+                if self.render_every is not None and i_eps % self.render_every == 0:
+                    self.play(self.max_step, env=self.render_env)
+
             except KeyboardInterrupt:
                 print(f'\nManually stopped training loop')
                 break
@@ -216,5 +223,4 @@ class A2CContinuousAgent(A2CAgent[T_Obs, T_Action]):
             obs_tensor = torch.tensor(obs, device=self.device)
             policy, _ = self.actor_critic_net(obs_tensor)
             action = policy.sample().cpu().numpy()
-            action += self.ou_noise()
             return action
