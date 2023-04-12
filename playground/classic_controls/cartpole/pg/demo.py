@@ -16,11 +16,12 @@ Action = np.int64
 
 class MyAgent(PGAgent[Obs, Action]):
     device = 'cpu'
-    max_step = 500
+    max_step = 1000
     n_eps = 200
     batch_size = 3000
     print_hash_every = 10
     report_progress_every = 5
+    render_every = 25
     # variant
     reward_to_go = True
     baseline = True
@@ -28,6 +29,7 @@ class MyAgent(PGAgent[Obs, Action]):
     def __init__(self) -> None:
         super().__init__()
         self.env = gym.make(ENV)
+        self.render_env = gym.make(ENV, render_mode='human')
         assert isinstance(self.env.observation_space, Box)
         assert isinstance(self.env.action_space, Discrete)
         in_dim = self.env.observation_space.shape[0]
@@ -45,4 +47,4 @@ class MyAgent(PGAgent[Obs, Action]):
 
 agent = MyAgent()
 agent.prompt('model.pth', )
-agent.play(200, env=gym.make(ENV, render_mode='human'))
+agent.play(agent.max_step, env=agent.render_env)
