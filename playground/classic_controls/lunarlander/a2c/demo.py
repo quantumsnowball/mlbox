@@ -14,13 +14,13 @@ Action = np.int64
 
 
 class MyAgent(A2CDiscreteAgent[Obs, Action]):
-    device = 'cuda'
+    device = 'cpu'
     max_step = 1000
-    n_eps = 2000
+    n_eps = 5000
     print_hash_every = 10
     rolling_reward_ma = 5
     report_progress_every = 100
-    render_every = 100
+    render_every = 1000
 
     def __init__(self) -> None:
         super().__init__()

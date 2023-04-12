@@ -41,7 +41,6 @@ class A2CDiscreteAgent(A2CAgent[T_Obs, T_Action]):
     gamma = 0.99
     lr = 1e-3
     value_weight = 0.5
-    entropy_weight = -0.001
 
     @override
     def learn(self) -> None:
