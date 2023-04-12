@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-from torch.distributions import Normal
+from torch.distributions import Categorical, Normal
 
 
 class ActorCriticDiscrete(nn.Module):
@@ -10,20 +10,27 @@ class ActorCriticDiscrete(nn.Module):
                  output_dim: int,
                  hidden_dim: int = 64):
         super().__init__()
-        self.actor_fc1 = nn.Linear(input_dim, hidden_dim)
-        self.actor_fc2 = nn.Linear(hidden_dim, output_dim)
-        self.critic_fc1 = nn.Linear(input_dim, hidden_dim)
-        self.critic_fc2 = nn.Linear(hidden_dim, 1)
+        self.base = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+        )
+        # actor
+        self.actor = nn.Sequential(
+            nn.Linear(hidden_dim, output_dim),
+        )
+        # policy
+        self.dist = Categorical  # DON'T define this inside forward()
+        # critic
+        self.critic = nn.Sequential(
+            nn.Linear(hidden_dim, 1),
+        )
 
     def forward(self, obs: Tensor):
-        # action probs
-        actor_x = F.relu(self.actor_fc1(obs))
-        action_probs = F.softmax(self.actor_fc2(actor_x), dim=-1)
-        # state value
-        critic_x = F.relu(self.critic_fc1(obs))
-        state_value = self.critic_fc2(critic_x)
-        # return
-        return action_probs, state_value
+        base_out = self.base(obs)
+        logits = self.actor(base_out)
+        policy = self.dist(logits=logits)
+        value = self.critic(base_out)
+        return policy, value
 
 
 class ActorCriticContinuous(nn.Module):
@@ -39,6 +46,7 @@ class ActorCriticContinuous(nn.Module):
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
         )
+        # mu, sigma
         self.mu = nn.Sequential(
             nn.Linear(hidden_dim, output_dim),
             nn.Tanh(),
@@ -47,12 +55,13 @@ class ActorCriticContinuous(nn.Module):
             nn.Linear(hidden_dim, output_dim),
             nn.Softplus(),
         )
-        self.value = nn.Linear(hidden_dim, 1)
+        # value
+        self.critic = nn.Linear(hidden_dim, 1)
 
     def forward(self, obs: Tensor):
         base_out = self.base(obs)
         mu = self.mu(base_out) * 2
         sigma = self.sigma(base_out)
         policy = Normal(mu, sigma)
-        value = self.value(base_out)
+        value = self.critic(base_out)
         return policy, value

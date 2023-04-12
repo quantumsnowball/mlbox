@@ -2,7 +2,7 @@ from collections import deque
 from pathlib import Path
 
 import torch
-from torch.distributions import Categorical
+from torch.nn.utils.clip_grad import clip_grad_norm_
 from typing_extensions import override
 
 from mlbox.agent.a2c.memory import Buffer
@@ -40,6 +40,8 @@ class A2CAgent(BasicAgent[T_Obs, T_Action],
 class A2CDiscreteAgent(A2CAgent[T_Obs, T_Action]):
     gamma = 0.99
     lr = 1e-3
+    value_weight = 0.5
+    entropy_weight = -0.001
 
     @override
     def learn(self) -> None:
@@ -52,14 +54,15 @@ class A2CDiscreteAgent(A2CAgent[T_Obs, T_Action]):
         value_target = reward.unsqueeze(1) + self.gamma * next_value * (~terminated.unsqueeze(1))
         delta = value_target - value
         # Compute the policy loss and value loss
-        log_prob = torch.log(policy.gather(1, action.unsqueeze(1)))
+        log_prob = policy.log_prob(action).unsqueeze(1)
         advantage = delta.detach()
         policy_loss = -(log_prob * advantage).mean()
         value_loss = delta.pow(2).mean()
-        loss = policy_loss + 0.5 * value_loss
+        loss = policy_loss + self.value_weight*value_loss
         # Update the actor-critic network using the combined loss
         self.optimizer.zero_grad()
         loss.backward()
+        clip_grad_norm_(self.actor_critic_net.parameters(), max_norm=1.0)
         self.optimizer.step()
 
     n_eps = 1000
@@ -124,10 +127,9 @@ class A2CDiscreteAgent(A2CAgent[T_Obs, T_Action]):
     def decide(self, obs: T_Obs) -> T_Action:
         with torch.no_grad():
             obs_tensor = torch.tensor(obs, device=self.device)
-            action_probs, _ = self.actor_critic_net(obs_tensor)
-            dist = Categorical(action_probs)
-            result = dist.sample().cpu().numpy()
-            return result
+            policy, _ = self.actor_critic_net(obs_tensor)
+            action = policy.sample().cpu().numpy()
+            return action
 
 
 class A2CContinuousAgent(A2CAgent[T_Obs, T_Action]):
@@ -136,6 +138,7 @@ class A2CContinuousAgent(A2CAgent[T_Obs, T_Action]):
 
     gamma = 0.99
     lr = 1e-3
+    entropy_weight = 0.01
 
     @override
     def learn(self) -> None:
@@ -152,7 +155,7 @@ class A2CContinuousAgent(A2CAgent[T_Obs, T_Action]):
         advantage = delta.detach()
         policy_loss = - (log_prob * advantage).mean()
         value_loss = delta.pow(2).mean()
-        entropy_loss = -0.01 * policy.entropy().mean()
+        entropy_loss = -self.entropy_weight * policy.entropy().mean()
         loss = policy_loss + value_loss + entropy_loss
         # Update the actor-critic network using the combined loss
         self.optimizer.zero_grad()

@@ -7,20 +7,20 @@ from gymnasium.spaces import Box, Discrete
 from mlbox.agent.a2c import A2CDiscreteAgent
 from mlbox.agent.a2c.nn import ActorCriticDiscrete
 
-ENV = 'CartPole-v1'
+ENV = 'LunarLander-v2'
 
 Obs = npt.NDArray[np.float32]
 Action = np.int64
 
 
 class MyAgent(A2CDiscreteAgent[Obs, Action]):
-    device = 'cpu'
+    device = 'cuda'
     max_step = 1000
     n_eps = 2000
     print_hash_every = 10
     rolling_reward_ma = 5
     report_progress_every = 100
-    render_every = 500
+    render_every = 100
 
     def __init__(self) -> None:
         super().__init__()
