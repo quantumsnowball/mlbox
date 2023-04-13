@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from torch.nn.utils.clip_grad import clip_grad_norm_
 from typing_extensions import override
 
 from mlbox.agent import EpsilonGreedyStrategy
@@ -61,9 +62,8 @@ class DQNAgent(BasicAgent[T_Obs, T_Action],
             # back propagation
             self.optimizer.zero_grad()
             loss.backward()
+            clip_grad_norm_(self.policy.parameters(), max_norm=1.0)
             self.optimizer.step()
-            # if _ == n_epoch-1:
-            #     breakpoint()
 
     n_eps = 100
     max_step = 10000
