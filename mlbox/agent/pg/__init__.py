@@ -3,8 +3,7 @@ from collections import deque
 from pathlib import Path
 
 import torch
-from torch import Tensor, tensor
-from torch.distributions import Categorical
+from torch import tensor
 from torch.nn import MSELoss
 from typing_extensions import override
 
@@ -27,11 +26,6 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
     # training
     #
 
-    def policy(self,
-               obs: Tensor) -> Categorical:
-        logits = self.policy_net(obs)
-        return Categorical(logits=logits)
-
     @override
     def learn(self) -> None:
         self.policy_net.train()
@@ -48,12 +42,13 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
             weight = reward
 
         # learning policy
-        self.policy_optimizer.zero_grad()
-        log_prob = self.policy(obs).log_prob(action)
+        policy = self.policy_net(obs)
+        log_prob = policy.log_prob(action)
         loss = -(log_prob*weight).mean()
+        # backward
+        self.policy_optimizer.zero_grad()
         loss.backward()
         self.policy_optimizer.step()
-
         # learning state value
         if self.baseline:
             baseline_loss = MSELoss()(self.baseline_net(obs).squeeze(1), reward)
@@ -129,9 +124,9 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
     def decide(self, obs: T_Obs) -> T_Action:
         with torch.no_grad():
             obs_tensor = tensor(obs, device=self.device)
-            dist = self.policy(obs_tensor)
-            result = dist.sample().cpu().numpy()
-            return result
+            policy = self.policy_net(obs_tensor)
+            action = policy.sample().cpu().numpy()
+            return action
 
     #
     # I/O
