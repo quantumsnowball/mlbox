@@ -1,18 +1,27 @@
+from collections import deque
 from pathlib import Path
 
 import numpy as np
 import torch
+import torch.nn.functional as F
+from torch.nn.utils.clip_grad import clip_grad_norm_
 from typing_extensions import override
 
 from mlbox.agent.basic import BasicAgent
+from mlbox.agent.ddpg.memory import CachedReplay
 from mlbox.agent.ddpg.props import DDPGProps
+from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
 class DDPGAgent(BasicAgent[T_Obs, T_Action],
                 DDPGProps):
+    # replay memory
+    replay_size = 10000
+
     def __init__(self) -> None:
         super().__init__()
+        self.replay = CachedReplay[T_Obs, T_Action](self.replay_size)
 
     polyak = 0.9
 
@@ -22,13 +31,96 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
             for target, src in zip(target_net.parameters(), src_net.parameters()):
                 target.data.copy_(self.polyak * src.data + (1.0 - self.polyak) * target.data)
 
+    n_epoch = 1
+    batch_size = 512
+    gamma = 0.99
+
     @override
     def learn(self) -> None:
-        pass
+        for _ in range(self.n_epoch):
+            # prepare batch of experience
+            batch = self.replay.sample(self.batch_size, device=self.device)
+            obs, action, reward, next_obs, terminated = batch.tuple
+            reward = batch.reward.unsqueeze(1)
+            terminated = batch.terminated.unsqueeze(1)
+            # set train mode
+            self.actor_net.train()
+            self.critic_net.train()
+            # calc net targets
+            action_target = self.actor_net_target(next_obs)
+            critic_target = self.critic_net_target(next_obs, action_target)
+            value_target = reward + self.gamma*critic_target*(~terminated)
+            # calc currents
+            value = self.critic_net(obs, action)
+            # critic backward
+            self.critic_optimizer.zero_grad()
+            critic_loss = F.mse_loss(value_target, value)
+            critic_loss.backward()
+            clip_grad_norm_(self.critic_net.parameters(), max_norm=1.0)
+            self.critic_optimizer.step()
+            # actor backward
+            self.actor_optimizer.zero_grad()
+            actor_loss = -self.critic_net(obs, self.actor_net(obs)).mean()
+            actor_loss.backward()
+            clip_grad_norm_(self.actor_net.parameters(), max_norm=1.0)
+            self.actor_optimizer.step()
+
+    n_eps = 100
+    max_step = 10000
+    update_target_every = 1
+    report_progress_every = 10
+    print_hash_every = 1
+    rolling_reward_ma = 5
+    render_every: int | None = None
 
     @override
     def train(self) -> None:
-        pass
+        self.actor_net.train()
+        rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
+        for i_eps in range(1, self.n_eps+1):
+            try:
+                self.progress = min(max(i_eps/self.n_eps, 0), 1)
+                # reset to a new environment
+                obs, *_ = self.env.reset()
+                # run the env
+                for _ in range(self.max_step):
+                    # act
+                    action = self.explore(obs)
+                    # step
+                    try:
+                        next_obs, reward, terminated, truncated, *_ = \
+                            self.env.step(action)
+                    except TerminatedError:
+                        break
+                    done = terminated or truncated
+                    # cache experience
+                    self.replay.cache(obs, action, reward, next_obs, terminated)
+                    # pointing next
+                    obs = next_obs
+                    if done:
+                        break
+                # post processing to cached experience before flush
+                self.replay.assert_terminated_flag()
+                # flush cache experience to memory
+                self.replay.flush()
+                # learn from experience replay
+                self.learn()
+                if i_eps % self.update_target_every == 0:
+                    self.update_targets()
+                # report progress
+                if i_eps % self.print_hash_every == 0:
+                    print('#', end='', flush=True)
+                # evulate and report progress
+                if i_eps % self.report_progress_every == 0:
+                    rolling_reward.append(self.play(self.max_step))
+                    mean_reward = sum(rolling_reward)/len(rolling_reward)
+                    print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
+                # render result
+                if self.render_every is not None and i_eps % self.render_every == 0:
+                    self.play(self.max_step, env=self.render_env)
+            except KeyboardInterrupt:
+                print(f'\nManually stopped training loop')
+                break
 
     def explore(self, obs: T_Obs) -> T_Action:
         with torch.no_grad():

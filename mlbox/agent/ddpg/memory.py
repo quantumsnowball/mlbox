@@ -1,5 +1,5 @@
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import astuple, dataclass
 from typing import Any, Generic, SupportsFloat
 
 import numpy as np
@@ -21,6 +21,7 @@ class Experience(Generic[T_Obs,
 
     def __post_init__(self) -> None:
         # post processing
+        self.action = np.float32(self.action)
         self.reward = np.float32(self.reward)
 
 
@@ -31,6 +32,10 @@ class Batch:
     reward: Tensor
     next_obs: Tensor
     terminated: Tensor
+
+    @property
+    def tuple(self) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, ]:
+        return astuple(self)
 
 
 class Replay(Dataset[Experience[T_Obs, T_Action]],
