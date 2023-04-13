@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import torch
 from typing_extensions import override
 
@@ -29,9 +30,21 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
     def train(self) -> None:
         pass
 
+    def explore(self, obs: T_Obs) -> T_Action:
+        with torch.no_grad():
+            obs_tensor = torch.tensor(obs, device=self.device)
+            action = self.actor_net(obs_tensor)
+            action = action.cpu().numpy()
+            sd = 0.02  # TODO
+            noise = np.random.normal(0, sd, action.shape)
+            return action + noise
+
     @override
     def decide(self, obs: T_Obs) -> T_Action:
-        pass
+        with torch.no_grad():
+            obs_tensor = torch.tensor(obs, device=self.device)
+            action = self.actor_net(obs_tensor)
+            return action.cpu().numpy()
 
     #
     # I/O
