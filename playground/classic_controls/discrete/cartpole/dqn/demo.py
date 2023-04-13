@@ -6,7 +6,7 @@ from torch.nn import MSELoss
 from torch.optim import Adam
 
 from mlbox.agent.dqn import DQNAgent
-from mlbox.neural import FullyConnected
+from mlbox.agent.dqn.nn import DQNNet
 
 ENV = 'CartPole-v1'
 
@@ -15,17 +15,18 @@ Action = np.int64
 
 
 class MyAgent(DQNAgent[Obs, Action]):
-    device = 'cuda'
+    device = 'cpu'
     replay_size = 5000
     batch_size = 64
     max_step = 1000
-    n_eps = 1000
+    n_eps = 5000
     n_epoch = 10
-    gamma = 0.99
-    rolling_reward_ma = 5
-    update_target_every = 5
-    report_progress_every = 20
-    render_every = 200
+    gamma = 0.95
+    rolling_reward_ma = 20
+    update_target_every = 10
+    print_hash_every = 5
+    report_progress_every = 100
+    render_every = 1000
 
     def __init__(self) -> None:
         super().__init__()
@@ -35,16 +36,18 @@ class MyAgent(DQNAgent[Obs, Action]):
         assert isinstance(self.env.action_space, Discrete)
         in_dim = self.env.observation_space.shape[0]
         out_dim = self.env.action_space.n.item()
-        self.policy = FullyConnected(in_dim, out_dim,
-                                     hidden_dim=32).to(self.device)
-        self.target = FullyConnected(in_dim, out_dim,
-                                     hidden_dim=32).to(self.device)
+        self.policy = DQNNet(in_dim, out_dim,
+                             hidden_dim=64,
+                             hidden_n=0).to(self.device)
+        self.target = DQNNet(in_dim, out_dim,
+                             hidden_dim=64,
+                             hidden_n=0).to(self.device)
         self.update_target()
         self.optimizer = Adam(self.policy.parameters(),
-                              lr=1e-2)
+                              lr=2e-3)
         self.loss_function = MSELoss()
 
 
 agent = MyAgent()
 agent.prompt('model.pth',)
-agent.play(1000, env=agent.render_env)
+agent.play(agent.max_step, env=agent.render_env)
