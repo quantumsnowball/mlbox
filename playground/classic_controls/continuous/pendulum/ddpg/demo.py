@@ -1,6 +1,7 @@
 import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
+import torch
 import torch.optim as optim
 from gymnasium.spaces import Box
 
@@ -14,16 +15,16 @@ Action = npt.NDArray[np.float32]
 
 
 class MyAgent(DDPGAgent[Obs, Action]):
-    device = 'cuda'
+    device = 'cpu'
     max_step = 500
     n_eps = 5000
     n_epoch = 5
-    replay_size = 5000
-    batch_size = 128
+    replay_size = 500_000
+    batch_size = 256
     update_target_every = 5
     print_hash_every = 5
-    rolling_reward_ma = 10
-    report_progress_every = 100
+    rolling_reward_ma = 20
+    report_progress_every = 50
     render_every = 1000
 
     def __init__(self) -> None:
@@ -38,8 +39,8 @@ class MyAgent(DDPGAgent[Obs, Action]):
         self.actor_net_target = DDPGActorNet(obs_dim, action_dim).to(self.device)
         self.critic_net = DDPGCriticNet(obs_dim, action_dim).to(self.device)
         self.critic_net_target = DDPGCriticNet(obs_dim, action_dim).to(self.device)
-        self.actor_optimizer = optim.Adam(self.actor_net.parameters(), lr=1e-3)
-        self.critic_optimizer = optim.Adam(self.critic_net.parameters(), lr=1e-3)
+        self.actor_optimizer = optim.Adam(self.actor_net.parameters(), lr=5e-3)
+        self.critic_optimizer = optim.Adam(self.critic_net.parameters(), lr=5e-3)
 
 
 agent = MyAgent()

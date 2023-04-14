@@ -39,7 +39,7 @@ class DDPGCriticNet(Module):
                  action_dim: int,
                  *,
                  hidden_dim: int = 256,
-                 hidden_n: int = 1,
+                 hidden_n: int = 0,
                  Activation: type[Module] = ReLU):
         super().__init__()
         # obs

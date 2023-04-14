@@ -31,6 +31,10 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
             for dest, src in zip(dest_net.parameters(), src_net.parameters()):
                 dest.data.copy_(self.polyak * src.data + (1.0 - self.polyak) * dest.data)
 
+    def sync_targets(self) -> None:
+        self.actor_net_target.load_state_dict(self.actor_net.state_dict())
+        self.critic_net_target.load_state_dict(self.critic_net.state_dict())
+
     n_epoch = 1
     batch_size = 512
     gamma = 0.99
@@ -46,23 +50,20 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
             # set train mode
             self.actor_net.train()
             self.critic_net.train()
-            # calc net targets
-            action_target = self.actor_net_target(next_obs)
-            critic_target = self.critic_net_target(next_obs, action_target)
-            value_target = reward + self.gamma*critic_target*(~terminated)
+            # calc target
+            q_target = self.critic_net_target(next_obs, self.actor_net_target(next_obs))
+            critic_target = reward + self.gamma*q_target*(~terminated)
             # calc currents
-            value = self.critic_net(obs, action)
+            critic = self.critic_net(obs, action)
             # critic backward
             self.critic_optimizer.zero_grad()
-            critic_loss = F.mse_loss(value_target, value)
+            critic_loss = F.mse_loss(critic_target, critic)
             critic_loss.backward()
-            clip_grad_norm_(self.critic_net.parameters(), max_norm=1.0)
             self.critic_optimizer.step()
             # actor backward
             self.actor_optimizer.zero_grad()
             actor_loss = -self.critic_net(obs, self.actor_net(obs)).mean()
             actor_loss.backward()
-            clip_grad_norm_(self.actor_net.parameters(), max_norm=1.0)
             self.actor_optimizer.step()
 
     n_eps = 100
@@ -75,6 +76,7 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
 
     @override
     def train(self) -> None:
+        self.sync_targets()
         self.actor_net.train()
         rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
         for i_eps in range(1, self.n_eps+1):
@@ -122,14 +124,16 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
                 print(f'\nManually stopped training loop')
                 break
 
+    min_noise = 0.02
+    max_noise = 2.0
+
     def explore(self, obs: T_Obs, progress: float) -> T_Action:
         with torch.no_grad():
             obs_tensor = torch.tensor(obs, device=self.device)
             action = self.actor_net(obs_tensor)
             action = action.cpu().numpy()
-            # sd = max(0.02, (1-progress)*self.env.action_space.high)
-            sd = max(0.02, (1-progress)*+2)
-            noise = np.random.normal(0, sd, action.shape)
+            std = self.min_noise + (1-progress)*(self.max_noise-self.min_noise)
+            noise = np.random.normal(0, std, action.shape)
             return action + noise
 
     @override
