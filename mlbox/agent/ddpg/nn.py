@@ -29,7 +29,7 @@ class DDPGActorNet(Module):
 
     def forward(self, obs: Tensor):
         x = self.net(obs)
-        # x = F.sigmoid(x) * (self.max_action - self.min_action) + self.min_action
+        x = F.sigmoid(x) * (self.max_action - self.min_action) + self.min_action
         return x
 
 
