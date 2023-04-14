@@ -26,10 +26,10 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
     polyak = 0.9
 
     def update_targets(self) -> None:
-        for target_net, src_net in ((self.actor_net_target, self.actor_net),
-                                    (self.critic_net_target, self.critic_net)):
-            for target, src in zip(target_net.parameters(), src_net.parameters()):
-                target.data.copy_(self.polyak * src.data + (1.0 - self.polyak) * target.data)
+        for dest_net, src_net in ((self.actor_net_target, self.actor_net),
+                                  (self.critic_net_target, self.critic_net)):
+            for dest, src in zip(dest_net.parameters(), src_net.parameters()):
+                dest.data.copy_(self.polyak * src.data + (1.0 - self.polyak) * dest.data)
 
     n_epoch = 1
     batch_size = 512
@@ -85,7 +85,7 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
                 # run the env
                 for _ in range(self.max_step):
                     # act
-                    action = self.explore(obs)
+                    action = self.explore(obs, self.progress)
                     # step
                     try:
                         next_obs, reward, terminated, truncated, *_ = \
@@ -122,12 +122,13 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
                 print(f'\nManually stopped training loop')
                 break
 
-    def explore(self, obs: T_Obs) -> T_Action:
+    def explore(self, obs: T_Obs, progress: float) -> T_Action:
         with torch.no_grad():
             obs_tensor = torch.tensor(obs, device=self.device)
             action = self.actor_net(obs_tensor)
             action = action.cpu().numpy()
-            sd = 0.02  # TODO
+            # sd = max(0.02, (1-progress)*self.env.action_space.high)
+            sd = max(0.02, (1-progress)*+2)
             noise = np.random.normal(0, sd, action.shape)
             return action + noise
 

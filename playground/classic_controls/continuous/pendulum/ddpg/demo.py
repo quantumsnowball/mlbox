@@ -14,14 +14,17 @@ Action = npt.NDArray[np.float32]
 
 
 class MyAgent(DDPGAgent[Obs, Action]):
-    ''' still not solved '''
-    device = 'cpu'
+    device = 'cuda'
     max_step = 500
     n_eps = 5000
+    n_epoch = 5
+    replay_size = 5000
+    batch_size = 128
+    update_target_every = 5
     print_hash_every = 5
-    rolling_reward_ma = 5
-    report_progress_every = 50
-    render_every = 500
+    rolling_reward_ma = 10
+    report_progress_every = 100
+    render_every = 1000
 
     def __init__(self) -> None:
         super().__init__()

@@ -1,4 +1,4 @@
-import torch
+import torch as T
 import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Linear, Module, ReLU, Sequential
@@ -29,8 +29,8 @@ class DDPGActorNet(Module):
 
     def forward(self, obs: Tensor):
         x = self.net(obs)
-        action = F.sigmoid(x) * (self.max_action - self.min_action) + self.min_action
-        return action
+        # x = F.sigmoid(x) * (self.max_action - self.min_action) + self.min_action
+        return x
 
 
 class DDPGCriticNet(Module):
@@ -59,6 +59,7 @@ class DDPGCriticNet(Module):
         # common
         self.common_net = Sequential()
         self.common_net.append(Linear(hidden_dim*2, hidden_dim))
+        self.common_net.append(Activation())
         for _ in range(hidden_n):
             self.common_net.append(Linear(hidden_dim, hidden_dim))
             self.common_net.append(Activation())
@@ -67,6 +68,6 @@ class DDPGCriticNet(Module):
     def forward(self, obs: Tensor, action: Tensor):
         obs_net_out = self.obs_net(obs)
         action_net_out = self.action_net(action)
-        common_in = torch.cat([obs_net_out, action_net_out], dim=1)
+        common_in = T.relu(T.cat([obs_net_out, action_net_out], dim=1))
         q = self.common_net(common_in)
         return q
