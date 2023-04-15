@@ -103,12 +103,12 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
                 self.learn()
                 # evulate and report progress
                 if i_eps % self.report_progress_every == 0:
-                    rolling_reward.append(self.play(self.max_step))
+                    rolling_reward.append(self.play())
                     mean_reward = sum(rolling_reward)/len(rolling_reward)
                     print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
                 # render result
                 if self.render_every is not None and i_eps % self.render_every == 0:
-                    self.play(self.max_step, env=self.render_env)
+                    self.play(env=self.render_env)
             except KeyboardInterrupt:
                 print(f'\nManually stopped training loop')
                 break
