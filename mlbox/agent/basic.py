@@ -114,6 +114,13 @@ class BasicAgent(Agent[T_Obs, T_Action]):
             mean_reward = sum(self.rolling_reward)/len(self.rolling_reward)
             print(f' | Episode {i:>4d} | {mean_reward=:.1f}')
 
+    render_every: int | None = None
+
+    def render_showcase(self,
+                        i: int) -> None:
+        if self.render_every is not None and i % self.render_every == 0:
+            self.play(env=self.render_env)
+
     #
     # I/O
     #

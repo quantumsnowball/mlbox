@@ -57,7 +57,6 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
 
     n_eps = 100
     batch_size = 6000
-    render_every: int | None = None
 
     @override
     def train(self) -> None:
@@ -98,11 +97,9 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
                         break
                 # learn from current batch
                 self.learn()
-                # evulate and report progress
+                # report progress
                 self.print_validation_result(i_eps)
-                # render result
-                if self.render_every is not None and i_eps % self.render_every == 0:
-                    self.play(env=self.render_env)
+                self.render_showcase(i_eps)
             except KeyboardInterrupt:
                 print(f'\nManually stopped training loop')
                 break

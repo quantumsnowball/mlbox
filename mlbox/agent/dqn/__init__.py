@@ -66,7 +66,6 @@ class DQNAgent(BasicAgent[T_Obs, T_Action],
 
     n_eps = 100
     update_target_every = 10
-    render_every: int | None = None
 
     @ override
     def train(self) -> None:
@@ -104,11 +103,8 @@ class DQNAgent(BasicAgent[T_Obs, T_Action],
                     self.update_target()
                 # report progress
                 self.print_progress_bar(i_eps)
-                # evulate and report progress
                 self.print_validation_result(i_eps)
-                # render result
-                if self.render_every is not None and i_eps % self.render_every == 0:
-                    self.play(env=self.render_env)
+                self.render_showcase(i_eps)
             except KeyboardInterrupt:
                 print(f'\nManually stopped training loop')
                 break
