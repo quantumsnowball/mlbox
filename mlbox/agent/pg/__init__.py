@@ -58,7 +58,6 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
 
     n_eps = 100
     batch_size = 6000
-    max_step = 1000
     report_progress_every = 10
     rolling_reward_ma = 5
     render_every: int | None = None

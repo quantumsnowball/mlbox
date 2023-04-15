@@ -66,7 +66,6 @@ class DQNAgent(BasicAgent[T_Obs, T_Action],
             self.optimizer.step()
 
     n_eps = 100
-    max_step = 10000
     update_target_every = 10
     report_progress_every = 10
     rolling_reward_ma = 5

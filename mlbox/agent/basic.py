@@ -58,11 +58,15 @@ class BasicAgent(Agent[T_Obs, T_Action]):
     # training
     #
 
+    max_step = 1000
+
     @override
     def play(self,
-             max_step: int,
+             max_step: int | None = None,
              *,
              env: Env[T_Obs, T_Action] | None = None) -> float:
+        # determine max step
+        max_step = max_step if max_step is not None else self.max_step
         # select env
         env = env if env is not None else self.env
         # reset to a new environment

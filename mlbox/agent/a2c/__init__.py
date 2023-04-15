@@ -49,7 +49,6 @@ class A2CAgent(BasicAgent[T_Obs, T_Action],
         self.optimizer.step()
 
     n_eps = 1000
-    max_step = 500
     rolling_reward_ma = 5
     report_progress_every = 10
     render_every: int | None = None
