@@ -1,3 +1,4 @@
+from collections import deque
 from inspect import currentframe
 from pathlib import Path
 from typing import Literal, Self
@@ -85,6 +86,11 @@ class BasicAgent(Agent[T_Obs, T_Action]):
                 break
         return total_reward
 
+    rolling_reward_ma = 5
+
+    def reset_rolling_reward(self) -> None:
+        self.rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
+
     #
     # progress report
     #
@@ -97,6 +103,16 @@ class BasicAgent(Agent[T_Obs, T_Action]):
                            chr: str = '#') -> None:
         if i % self.print_hash_every == 0:
             print(chr, end='', flush=True)
+
+    report_progress_every = 10
+
+    def print_validation_result(self,
+                                i: int,
+                                ) -> None:
+        if i % self.report_progress_every == 0:
+            self.rolling_reward.append(self.play())
+            mean_reward = sum(self.rolling_reward)/len(self.rolling_reward)
+            print(f' | Episode {i:>4d} | {mean_reward=:.1f}')
 
     #
     # I/O

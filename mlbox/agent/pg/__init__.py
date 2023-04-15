@@ -1,5 +1,4 @@
 import itertools
-from collections import deque
 from pathlib import Path
 
 import torch
@@ -58,15 +57,13 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
 
     n_eps = 100
     batch_size = 6000
-    report_progress_every = 10
-    rolling_reward_ma = 5
     render_every: int | None = None
 
     @override
     def train(self) -> None:
         self.policy_net.train()
+        self.reset_rolling_reward()
         # episode loop
-        rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
         for i_eps in range(1, self.n_eps):
             try:
                 # only train on current policy experience
@@ -102,10 +99,7 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
                 # learn from current batch
                 self.learn()
                 # evulate and report progress
-                if i_eps % self.report_progress_every == 0:
-                    rolling_reward.append(self.play())
-                    mean_reward = sum(rolling_reward)/len(rolling_reward)
-                    print(f' | Episode {i_eps:>4d} | {mean_reward=:.1f}')
+                self.print_validation_result(i_eps)
                 # render result
                 if self.render_every is not None and i_eps % self.render_every == 0:
                     self.play(env=self.render_env)
