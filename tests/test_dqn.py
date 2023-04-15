@@ -25,7 +25,7 @@ def test_dqn(run_on):
         update_target_every = 5
         report_progress_every = 20
         rolling_reward_ma = 5
-        n_eps = 1000
+        n_eps = 5
         n_epoch = 10
         gamma = 0.99
 
@@ -45,4 +45,4 @@ def test_dqn(run_on):
                                   lr=1e-3)
             self.loss_function = MSELoss()
 
-    MyAgent()
+    MyAgent().train()

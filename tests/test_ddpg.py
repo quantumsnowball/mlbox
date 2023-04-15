@@ -19,7 +19,7 @@ def test_ddpg(run_on):
     class MyAgent(DDPGAgent[Obs, Action]):
         device = run_on
         max_step = 500
-        n_eps = 5000
+        n_eps = 5
         n_epoch = 5
         replay_size = 1000*max_step
         batch_size = 256
@@ -50,4 +50,4 @@ def test_ddpg(run_on):
             self.actor_optimizer = optim.Adam(self.actor_net.parameters(), lr=5e-3)
             self.critic_optimizer = optim.Adam(self.critic_net.parameters(), lr=5e-3)
 
-    MyAgent()
+    MyAgent().train()
