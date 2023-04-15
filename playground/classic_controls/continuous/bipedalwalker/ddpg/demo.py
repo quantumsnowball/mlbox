@@ -15,19 +15,17 @@ Action = npt.NDArray[np.float32]
 
 
 class MyAgent(DDPGAgent[Obs, Action]):
-    device = T.device('cpu')
+    device = T.device('cuda')
     max_step = 500
     n_eps = 5000
-    n_epoch = 5
+    n_epoch = 10
     replay_size = 1000*max_step
-    batch_size = 256
-    update_target_every = 5
+    batch_size = 128
+    update_target_every = 10
     print_hash_every = 5
     rolling_reward_ma = 20
     report_progress_every = 50
     render_every = 500
-    min_noise = 1.5
-    max_noise = 10.0
 
     def __init__(self) -> None:
         super().__init__()
@@ -39,6 +37,8 @@ class MyAgent(DDPGAgent[Obs, Action]):
         action_dim = self.env.action_space.shape[0]
         high = self.env.action_space.high
         low = self.env.action_space.low
+        self.min_noise = 0.2
+        self.max_noise = high * 5
         self.actor_net = DDPGActorNet(obs_dim, action_dim,
                                       min_action=low,
                                       max_action=high,
@@ -49,8 +49,8 @@ class MyAgent(DDPGAgent[Obs, Action]):
                                              device=self.device)
         self.critic_net = DDPGCriticNet(obs_dim, action_dim, device=self.device)
         self.critic_net_target = DDPGCriticNet(obs_dim, action_dim, device=self.device)
-        self.actor_optimizer = optim.Adam(self.actor_net.parameters(), lr=5e-3)
-        self.critic_optimizer = optim.Adam(self.critic_net.parameters(), lr=5e-3)
+        self.actor_optimizer = optim.Adam(self.actor_net.parameters(), lr=1e-3)
+        self.critic_optimizer = optim.Adam(self.critic_net.parameters(), lr=1e-3)
 
 
 agent = MyAgent()
