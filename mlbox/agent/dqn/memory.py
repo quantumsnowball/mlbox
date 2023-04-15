@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Generic, SupportsFloat
 
 import numpy as np
+import torch as T
 from numpy.typing import NDArray
 from torch import Tensor, tensor
 from torch.utils.data import DataLoader, Dataset
@@ -67,7 +68,7 @@ class Replay(Dataset[Experience[T_Obs, T_Action]],
     def sample(self,
                batch_size: int,
                *,
-               device: str = 'cpu') -> Batch:
+               device: T.device = T.device('cpu')) -> Batch:
         def collate(batch: list[Experience[T_Obs, T_Action]]) -> Batch:
             # avoid create tensor from list of nd.array
             def to_tensor(arr: NDArray[Any]) -> Tensor:

@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.typing as npt
+import torch as T
 from gymnasium.spaces import Box, Discrete
 from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
@@ -14,7 +15,7 @@ from trbox.trader import Trader
 from typing_extensions import override
 
 from mlbox.agent.dqn import DQNAgent
-from mlbox.neural import FullyConnected
+from mlbox.agent.dqn.nn import DQNNet
 from mlbox.trenv import TrEnv
 from mlbox.utils import crop
 
@@ -102,7 +103,7 @@ class MyEnv(TrEnv[Obs, Action]):
 # Agent
 #
 class MyAgent(DQNAgent[Obs, Action]):
-    device = 'cuda'
+    device = T.device('cuda')
     replay_size = 100000
     batch_size = 256
     update_target_every = 5
@@ -116,10 +117,12 @@ class MyAgent(DQNAgent[Obs, Action]):
         self.env = MyEnv()
         in_dim = self.env.observation_space.shape[0]
         out_dim = self.env.action_space.n.item()
-        self.policy = FullyConnected(in_dim, out_dim,
-                                     hidden_dim=32).to(self.device)
-        self.target = FullyConnected(in_dim, out_dim,
-                                     hidden_dim=32).to(self.device)
+        self.policy = DQNNet(in_dim, out_dim,
+                             hidden_dim=32,
+                             device=self.device)
+        self.target = DQNNet(in_dim, out_dim,
+                             hidden_dim=32,
+                             device=self.device)
         self.update_target()
         self.optimizer = Adam(self.policy.parameters(),
                               lr=1e-3)

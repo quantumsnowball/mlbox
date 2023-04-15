@@ -1,6 +1,7 @@
 import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
+import torch as T
 import torch.optim as optim
 from gymnasium.spaces import Box
 
@@ -15,7 +16,7 @@ Action = npt.NDArray[np.float32]
 
 class MyAgent(A2CContinuousAgent[Obs, Action]):
     ''' still not solved '''
-    device = 'cpu'
+    device = T.device('cpu')
     max_step = 500
     n_eps = 5000
     print_hash_every = 5
@@ -33,7 +34,8 @@ class MyAgent(A2CContinuousAgent[Obs, Action]):
         out_dim = self.env.action_space.shape[0]*2
         self.actor_critic_net = ActorCriticContinuous(in_dim, out_dim,
                                                       mu_clip=True,
-                                                      mu_scale=2.0).to(self.device)
+                                                      mu_scale=2.0,
+                                                      device=self.device)
         self.optimizer = optim.Adam(self.actor_critic_net.parameters(),
                                     lr=1e-2)
 

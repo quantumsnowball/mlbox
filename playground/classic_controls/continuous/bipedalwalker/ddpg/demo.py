@@ -8,7 +8,7 @@ from gymnasium.spaces import Box
 from mlbox.agent.ddpg import DDPGAgent
 from mlbox.agent.ddpg.nn import DDPGActorNet, DDPGCriticNet
 
-ENV = 'Pendulum-v1'
+ENV = 'BipedalWalker-v3'
 
 Obs = npt.NDArray[np.float32]
 Action = npt.NDArray[np.float32]
@@ -25,9 +25,9 @@ class MyAgent(DDPGAgent[Obs, Action]):
     print_hash_every = 5
     rolling_reward_ma = 20
     report_progress_every = 50
-    render_every = 1000
-    min_noise = 0.5
-    max_noise = 3.0
+    render_every = 500
+    min_noise = 1.5
+    max_noise = 10.0
 
     def __init__(self) -> None:
         super().__init__()
@@ -37,13 +37,15 @@ class MyAgent(DDPGAgent[Obs, Action]):
         assert isinstance(self.env.action_space, Box)
         obs_dim = self.env.observation_space.shape[0]
         action_dim = self.env.action_space.shape[0]
+        high = self.env.action_space.high
+        low = self.env.action_space.low
         self.actor_net = DDPGActorNet(obs_dim, action_dim,
-                                      min_action=-2,
-                                      max_action=+2,
+                                      min_action=low,
+                                      max_action=high,
                                       device=self.device)
         self.actor_net_target = DDPGActorNet(obs_dim, action_dim,
-                                             min_action=-2,
-                                             max_action=+2,
+                                             min_action=low,
+                                             max_action=high,
                                              device=self.device)
         self.critic_net = DDPGCriticNet(obs_dim, action_dim, device=self.device)
         self.critic_net_target = DDPGCriticNet(obs_dim, action_dim, device=self.device)

@@ -1,8 +1,9 @@
 from collections import deque
 from inspect import currentframe
 from pathlib import Path
-from typing import Literal, Self
+from typing import Self
 
+import torch as T
 from gymnasium import Env
 from typing_extensions import override
 
@@ -17,7 +18,7 @@ class BasicAgent(Agent[T_Obs, T_Action]):
     Implement common props of an Agent
     '''
 
-    device: Literal['cuda', 'cpu', ]
+    device: T.device
 
     def __new__(cls) -> Self:
         try:

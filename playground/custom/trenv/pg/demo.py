@@ -1,7 +1,8 @@
 import numpy as np
 import numpy.typing as npt
+import torch as T
 from gymnasium.spaces import Box, Discrete
-from torch.nn import Identity, ReLU, Tanh
+from torch.nn import ReLU, Tanh
 from torch.optim import Adam
 from trbox.backtest import Backtest
 from trbox.broker.paper import PaperEX
@@ -14,7 +15,7 @@ from trbox.trader import Trader
 from typing_extensions import override
 
 from mlbox.agent.pg import PGAgent
-from mlbox.neural import FullyConnected
+from mlbox.agent.pg.nn import BaselineNet, PolicyNet
 from mlbox.trenv import TrEnv
 from mlbox.utils import crop, pnl_ratio
 
@@ -102,7 +103,7 @@ class MyEnv(TrEnv[Obs, Action]):
 # Agent
 #
 class MyAgent(PGAgent[Obs, Action]):
-    device = 'cpu'
+    device = T.device('cpu')
     max_step = 500
     n_eps = 50
     batch_size = 1250
@@ -115,13 +116,14 @@ class MyAgent(PGAgent[Obs, Action]):
         self.env = MyEnv()
         in_dim = self.env.observation_space.shape[0]
         out_dim = self.env.action_space.n.item()
-        self.policy_net = FullyConnected(in_dim, out_dim,
-                                         hidden_dim=32,
-                                         Activation=Tanh,
-                                         OutputActivation=Identity).to(self.device)
-        self.baseline_net = FullyConnected(in_dim, 1,
-                                           hidden_dim=32,
-                                           Activation=ReLU).to(self.device)
+        self.policy_net = PolicyNet(in_dim, out_dim,
+                                    hidden_dim=32,
+                                    Activation=Tanh,
+                                    device=self.device)
+        self.baseline_net = BaselineNet(in_dim, 1,
+                                        hidden_dim=32,
+                                        Activation=ReLU,
+                                        device=self.device)
         self.policy_optimizer = Adam(self.policy_net.parameters(), lr=1e-2)
         self.baseline_optimizer = Adam(self.policy_net.parameters(), lr=1e-3)
 

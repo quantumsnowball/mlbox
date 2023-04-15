@@ -4,6 +4,7 @@ from typing import Any, Generic, SupportsFloat
 
 import numpy as np
 import torch
+import torch as T
 from numpy.typing import NDArray
 from torch import Tensor, tensor
 
@@ -69,7 +70,7 @@ class Buffer(Generic[T_Obs, T_Action]):
         self._cached.clear()
 
     def recall(self,
-               device: str = 'cpu') -> Experiences:
+               device: T.device = T.device('cpu')) -> Experiences:
         def to_tensor(arr: NDArray[Any],
                       **kwargs: Any) -> Tensor:
             return tensor(arr, device=device, **kwargs)

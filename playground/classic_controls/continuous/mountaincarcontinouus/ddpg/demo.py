@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
-import torch
+import torch as T
 import torch.optim as optim
 from gymnasium.spaces import Box
 
@@ -15,7 +15,7 @@ Action = npt.NDArray[np.float32]
 
 
 class MyAgent(DDPGAgent[Obs, Action]):
-    device = 'cpu'
+    device = T.device('cpu')
     max_step = 500
     n_eps = 5000
     n_epoch = 5
@@ -39,12 +39,14 @@ class MyAgent(DDPGAgent[Obs, Action]):
         action_dim = self.env.action_space.shape[0]
         self.actor_net = DDPGActorNet(obs_dim, action_dim,
                                       min_action=-2,
-                                      max_action=+2).to(self.device)
+                                      max_action=+2,
+                                      device=self.device)
         self.actor_net_target = DDPGActorNet(obs_dim, action_dim,
                                              min_action=-2,
-                                             max_action=+2).to(self.device)
-        self.critic_net = DDPGCriticNet(obs_dim, action_dim).to(self.device)
-        self.critic_net_target = DDPGCriticNet(obs_dim, action_dim).to(self.device)
+                                             max_action=+2,
+                                             device=self.device)
+        self.critic_net = DDPGCriticNet(obs_dim, action_dim, device=self.device)
+        self.critic_net_target = DDPGCriticNet(obs_dim, action_dim, device=self.device)
         self.actor_optimizer = optim.Adam(self.actor_net.parameters(), lr=5e-3)
         self.critic_optimizer = optim.Adam(self.critic_net.parameters(), lr=5e-3)
 

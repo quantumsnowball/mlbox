@@ -1,7 +1,11 @@
+from typing import Self
+
 import torch as T
 import torch.nn.functional as F
-from torch import Tensor
+from numpy.typing import NDArray
+from torch import Tensor, tensor
 from torch.nn import Linear, Module, ReLU, Sequential
+from typing_extensions import override
 
 
 class DDPGActorNet(Module):
@@ -9,12 +13,14 @@ class DDPGActorNet(Module):
                  in_dim: int,
                  out_dim: int,
                  *,
+                 device: T.device,
                  hidden_dim: int = 256,
                  hidden_n: int = 1,
                  Activation: type[Module] = ReLU,
-                 min_action: float = -1,
-                 max_action: float = +1):
+                 min_action: float | NDArray = -1,
+                 max_action: float | NDArray = +1):
         super().__init__()
+        self.device = device
         # net
         self.net = Sequential()
         self.net.append(Linear(in_dim, hidden_dim))
@@ -24,8 +30,10 @@ class DDPGActorNet(Module):
             self.net.append(Activation())
         self.net.append(Linear(hidden_dim, out_dim))
         # const
-        self.max_action = max_action
-        self.min_action = min_action
+        self.min_action = tensor(min_action, device=device)
+        self.max_action = tensor(max_action, device=device)
+        # to device
+        self.to(device)
 
     def forward(self, obs: Tensor):
         x = self.net(obs)
@@ -38,6 +46,7 @@ class DDPGCriticNet(Module):
                  obs_dim: int,
                  action_dim: int,
                  *,
+                 device: T.device,
                  hidden_dim: int = 256,
                  hidden_n: int = 0,
                  Activation: type[Module] = ReLU):
@@ -64,6 +73,8 @@ class DDPGCriticNet(Module):
             self.common_net.append(Linear(hidden_dim, hidden_dim))
             self.common_net.append(Activation())
         self.common_net.append(Linear(hidden_dim, 1))
+        # to device
+        self.to(device)
 
     def forward(self, obs: Tensor, action: Tensor):
         obs_net_out = self.obs_net(obs)

@@ -1,6 +1,7 @@
 import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
+import torch as T
 from gymnasium.spaces import Box, Discrete
 from torch.nn import MSELoss
 from torch.optim import Adam
@@ -15,7 +16,7 @@ Action = np.int64
 
 
 class MyAgent(DQNAgent[Obs, Action]):
-    device = 'cpu'
+    device = T.device('cpu')
     replay_size = 5000
     batch_size = 64
     max_step = 1000
@@ -38,10 +39,12 @@ class MyAgent(DQNAgent[Obs, Action]):
         out_dim = self.env.action_space.n.item()
         self.policy = DQNNet(in_dim, out_dim,
                              hidden_dim=64,
-                             hidden_n=0).to(self.device)
+                             hidden_n=0,
+                             device=self.device)
         self.target = DQNNet(in_dim, out_dim,
                              hidden_dim=64,
-                             hidden_n=0).to(self.device)
+                             hidden_n=0,
+                             device=self.device)
         self.update_target()
         self.optimizer = Adam(self.policy.parameters(),
                               lr=2e-3)

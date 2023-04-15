@@ -1,3 +1,4 @@
+import torch as T
 from torch import Tensor
 from torch.nn import Linear, Module, ReLU, Sequential
 
@@ -7,6 +8,7 @@ class DQNNet(Module):
                  in_dim: int,
                  out_dim: int,
                  *,
+                 device: T.device,
                  hidden_dim: int = 64,
                  hidden_n: int = 1,
                  Activation: type[Module] = ReLU):
@@ -21,6 +23,8 @@ class DQNNet(Module):
             self.net.append(Activation())
         # output layer
         self.net.append(Linear(hidden_dim, out_dim))
+        # to device
+        self.to(device)
 
     def forward(self, obs: Tensor):
         return self.net(obs)
