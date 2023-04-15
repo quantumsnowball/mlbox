@@ -70,7 +70,6 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
     max_step = 10000
     update_target_every = 1
     report_progress_every = 10
-    print_hash_every = 1
     rolling_reward_ma = 5
     render_every: int | None = None
 
@@ -110,8 +109,7 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
                 if i_eps % self.update_target_every == 0:
                     self.update_targets()
                 # report progress
-                if i_eps % self.print_hash_every == 0:
-                    print('#', end='', flush=True)
+                self.print_progress_bar(i_eps)
                 # evulate and report progress
                 if i_eps % self.report_progress_every == 0:
                     rolling_reward.append(self.play(self.max_step))

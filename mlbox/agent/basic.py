@@ -82,6 +82,19 @@ class BasicAgent(Agent[T_Obs, T_Action]):
         return total_reward
 
     #
+    # progress report
+    #
+
+    print_hash_every = 10
+
+    def print_progress_bar(self,
+                           i: int,
+                           *,
+                           chr: str = '#') -> None:
+        if i % self.print_hash_every == 0:
+            print(chr, end='', flush=True)
+
+    #
     # I/O
     #
 

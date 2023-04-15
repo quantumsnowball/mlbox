@@ -6,7 +6,6 @@ from torch.nn.utils.clip_grad import clip_grad_norm_
 from typing_extensions import override
 
 from mlbox.agent.a2c.memory import Buffer
-from mlbox.agent.a2c.nn import ActorCriticContinuous, ActorCriticDiscrete
 from mlbox.agent.a2c.props import A2CProps
 from mlbox.agent.basic import BasicAgent
 from mlbox.events import TerminatedError
@@ -51,7 +50,6 @@ class A2CAgent(BasicAgent[T_Obs, T_Action],
 
     n_eps = 1000
     max_step = 500
-    print_hash_every = 10
     rolling_reward_ma = 5
     report_progress_every = 10
     render_every: int | None = None
@@ -89,8 +87,7 @@ class A2CAgent(BasicAgent[T_Obs, T_Action],
                 # learn from current batch
                 self.learn()
                 # report progress
-                if i_eps % self.print_hash_every == 0:
-                    print('#', end='', flush=True)
+                self.print_progress_bar(i_eps)
                 # evulate and report progress
                 if i_eps % self.report_progress_every == 0:
                     rolling_reward.append(self.play(self.max_step))

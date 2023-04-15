@@ -59,7 +59,6 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
     n_eps = 100
     batch_size = 6000
     max_step = 1000
-    print_hash_every = 10
     report_progress_every = 10
     rolling_reward_ma = 5
     render_every: int | None = None
@@ -97,8 +96,7 @@ class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
                     # flush cache trajectory to memory
                     self.buffer.flush()
                     # report progress
-                    if i_batch % self.print_hash_every == 0:
-                        print('#', end='', flush=True)
+                    self.print_progress_bar(i_batch)
                     # enough traj
                     if len(self.buffer) >= self.batch_size:
                         break
