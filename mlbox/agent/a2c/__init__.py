@@ -66,8 +66,7 @@ class A2CAgent(BasicAgent[T_Obs, T_Action],
                     action = self.decide(obs)
                     # step
                     try:
-                        next_obs, reward, terminated, truncated, *_ = \
-                            self.env.step(action)
+                        next_obs, reward, terminated, truncated, *_ = self.env.step(action)
                     except TerminatedError:
                         break
                     done = terminated or truncated

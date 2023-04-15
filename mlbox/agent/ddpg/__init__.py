@@ -83,8 +83,7 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
                     action = self.explore(obs, self.progress)
                     # step
                     try:
-                        next_obs, reward, terminated, truncated, *_ = \
-                            self.env.step(action)
+                        next_obs, reward, terminated, truncated, *_ = self.env.step(action)
                     except TerminatedError:
                         break
                     done = terminated or truncated
