@@ -106,6 +106,7 @@ class BasicAgent(Agent[T_Obs, T_Action]):
             print(chr, end='', flush=True)
 
     report_progress_every = 10
+    mean_reward_display_format = '+.1f'
 
     def print_validation_result(self,
                                 i: int,
@@ -113,7 +114,7 @@ class BasicAgent(Agent[T_Obs, T_Action]):
         if i % self.report_progress_every == 0:
             self.rolling_reward.append(self.play())
             mean_reward = sum(self.rolling_reward)/len(self.rolling_reward)
-            print(f' | Episode {i:>4d} | {mean_reward=:.1f}')
+            print(f' | Episode {i:>4d} | {mean_reward=:{self.mean_reward_display_format}}')
 
     render_every: int | None = None
 
