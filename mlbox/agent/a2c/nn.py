@@ -1,3 +1,5 @@
+from itertools import chain
+
 import torch as T
 import torch.nn as nn
 from torch import Tensor
@@ -16,26 +18,32 @@ class ActorCriticDiscrete(nn.Module):
                  critic_n: int = 0):
         super().__init__()
         # base layer
-        self.base = nn.Sequential()
-        self.base.append(nn.Linear(in_dim, hidden_dim))
-        self.base.append(nn.ReLU())
-        for _ in range(base_n):
-            self.base.append(nn.Linear(hidden_dim, hidden_dim))
-            self.base.append(nn.ReLU())
+        self.base = nn.Sequential(
+            nn.Linear(in_dim, hidden_dim),
+            nn.ReLU(),
+            *chain(*((
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+            ) for _ in range(base_n)))
+        )
         # actor layer
-        self.actor = nn.Sequential()
-        for _ in range(actor_n):
-            self.actor.append(nn.Linear(hidden_dim, hidden_dim))
-            self.actor.append(nn.ReLU())
-        self.actor.append(nn.Linear(hidden_dim, out_dim))
+        self.actor = nn.Sequential(
+            *chain(*((
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+            ) for _ in range(actor_n))),
+            nn.Linear(hidden_dim, out_dim),
+        )
         # policy
         self.dist = Categorical  # DON'T define this inside forward()
         # critic
-        self.critic = nn.Sequential()
-        for _ in range(critic_n):
-            self.critic.append(nn.Linear(hidden_dim, hidden_dim))
-            self.critic.append(nn.ReLU())
-        self.critic.append(nn.Linear(hidden_dim, 1))
+        self.critic = nn.Sequential(
+            *chain(*((
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+            ) for _ in range(critic_n))),
+            nn.Linear(hidden_dim, 1),
+        )
         # to device
         self.to(device)
 
@@ -62,35 +70,42 @@ class ActorCriticContinuous(nn.Module):
                  mu_scale: float = 1.0) -> None:
         super().__init__()
         # base
-        self.base = nn.Sequential()
-        self.base.append(nn.Linear(in_dim, hidden_dim))
-        self.base.append(nn.ReLU())
-        for _ in range(base_n):
-            self.base.append(nn.Linear(hidden_dim, hidden_dim))
-            self.base.append(nn.ReLU())
+        self.base = nn.Sequential(
+            nn.Linear(in_dim, hidden_dim),
+            nn.ReLU(),
+            *chain(*((
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+            ) for _ in range(base_n)))
+        )
         # mu
-        self.mu = nn.Sequential()
-        for _ in range(mu_n):
-            self.mu.append(nn.Linear(hidden_dim, hidden_dim))
-            self.mu.append(nn.ReLU())
-        self.mu.append(nn.Linear(hidden_dim, out_dim))
-        if mu_clip:
-            self.mu.append(nn.Tanh())
+        self.mu = nn.Sequential(
+            *chain(*((
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+            ) for _ in range(mu_n))),
+            nn.Linear(hidden_dim, out_dim),
+            nn.Tanh() if mu_clip else nn.Identity()
+        )
         # sigma
-        self.sigma = nn.Sequential()
-        for _ in range(sigma_n):
-            self.sigma.append(nn.Linear(hidden_dim, hidden_dim))
-            self.sigma.append(nn.ReLU())
-        self.sigma.append(nn.Linear(hidden_dim, out_dim))
-        self.sigma.append(nn.Softplus())
+        self.sigma = nn.Sequential(
+            *chain(*((
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+            ) for _ in range(sigma_n))),
+            nn.Linear(hidden_dim, out_dim),
+            nn.Softplus(),
+        )
         # policy
         self.dist = Normal
         # value
-        self.critic = nn.Sequential()
-        for _ in range(critic_n):
-            self.critic.append(nn.Linear(hidden_dim, hidden_dim))
-            self.critic.append(nn.ReLU())
-        self.critic.append(nn.Linear(hidden_dim, 1))
+        self.critic = nn.Sequential(
+            *chain(*((
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+            ) for _ in range(critic_n))),
+            nn.Linear(hidden_dim, 1),
+        )
         # const
         self.mu_scale = mu_scale
         # to device

@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import Self
 
 import torch as T
@@ -22,13 +23,18 @@ class DDPGActorNet(Module):
         super().__init__()
         self.device = device
         # net
-        self.net = Sequential()
-        self.net.append(Linear(in_dim, hidden_dim))
-        self.net.append(Activation())
-        for _ in range(hidden_n):
-            self.net.append(Linear(hidden_dim, hidden_dim))
-            self.net.append(Activation())
-        self.net.append(Linear(hidden_dim, out_dim))
+        self.net = Sequential(
+            # input
+            Linear(in_dim, hidden_dim),
+            Activation(),
+            # hidden
+            *chain(*((
+                Linear(hidden_dim, hidden_dim),
+                Activation(),
+            ) for _ in range(hidden_n))),
+            # output
+            Linear(hidden_dim, out_dim),
+        )
         # const
         self.min_action = tensor(min_action, device=device)
         self.max_action = tensor(max_action, device=device)
@@ -52,27 +58,33 @@ class DDPGCriticNet(Module):
                  Activation: type[Module] = ReLU):
         super().__init__()
         # obs
-        self.obs_net = Sequential()
-        self.obs_net.append(Linear(obs_dim, hidden_dim))
-        self.obs_net.append(Activation())
-        for _ in range(hidden_n):
-            self.obs_net.append(Linear(hidden_dim, hidden_dim))
-            self.obs_net.append(Activation())
+        self.obs_net = Sequential(
+            Linear(obs_dim, hidden_dim),
+            Activation(),
+            *chain(*((
+                Linear(hidden_dim, hidden_dim),
+                Activation()
+            ) for _ in range(hidden_n)))
+        )
         # action
-        self.action_net = Sequential()
-        self.action_net.append(Linear(action_dim, hidden_dim))
-        self.action_net.append(Activation())
-        for _ in range(hidden_n):
-            self.action_net.append(Linear(hidden_dim, hidden_dim))
-            self.action_net.append(Activation())
+        self.action_net = Sequential(
+            Linear(action_dim, hidden_dim),
+            Activation(),
+            *chain(*((
+                Linear(hidden_dim, hidden_dim),
+                Activation()
+            ) for _ in range(hidden_n)))
+        )
         # common
-        self.common_net = Sequential()
-        self.common_net.append(Linear(hidden_dim*2, hidden_dim))
-        self.common_net.append(Activation())
-        for _ in range(hidden_n):
-            self.common_net.append(Linear(hidden_dim, hidden_dim))
-            self.common_net.append(Activation())
-        self.common_net.append(Linear(hidden_dim, 1))
+        self.common_net = Sequential(
+            Linear(hidden_dim*2, hidden_dim),
+            Activation(),
+            *chain(*((
+                Linear(hidden_dim, hidden_dim),
+                Activation()
+            ) for _ in range(hidden_n))),
+            Linear(hidden_dim, 1),
+        )
         # to device
         self.to(device)
 
