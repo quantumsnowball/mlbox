@@ -39,12 +39,10 @@ class MyAgent(DQNAgent[Obs, Action]):
         out_dim = self.env.action_space.n.item()
         self.policy = DQNNet(in_dim, out_dim,
                              hidden_dim=64,
-                             hidden_n=0,
-                             device=self.device)
+                             hidden_n=0).to(self.device)
         self.target = DQNNet(in_dim, out_dim,
                              hidden_dim=64,
-                             hidden_n=0,
-                             device=self.device)
+                             hidden_n=0).to(self.device)
         self.update_target()
         self.optimizer = Adam(self.policy.parameters(),
                               lr=2e-3)

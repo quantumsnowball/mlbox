@@ -1,6 +1,5 @@
 from itertools import chain
 
-import torch as T
 import torch.nn as nn
 from torch import Tensor
 from torch.distributions import Categorical, Normal
@@ -11,7 +10,6 @@ class ActorCriticDiscrete(nn.Module):
                  in_dim: int,
                  out_dim: int,
                  *,
-                 device: T.device,
                  hidden_dim: int = 64,
                  base_n: int = 0,
                  actor_n: int = 0,
@@ -44,8 +42,6 @@ class ActorCriticDiscrete(nn.Module):
             ) for _ in range(critic_n))),
             nn.Linear(hidden_dim, 1),
         )
-        # to device
-        self.to(device)
 
     def forward(self, obs: Tensor):
         base_out = self.base(obs)
@@ -60,7 +56,6 @@ class ActorCriticContinuous(nn.Module):
                  in_dim: int,
                  out_dim: int,
                  *,
-                 device: T.device,
                  hidden_dim: int = 64,
                  base_n: int = 0,
                  mu_n: int = 0,
@@ -108,8 +103,6 @@ class ActorCriticContinuous(nn.Module):
         )
         # const
         self.mu_scale = mu_scale
-        # to device
-        self.to(device)
 
     def forward(self, obs: Tensor):
         base_out = self.base(obs)

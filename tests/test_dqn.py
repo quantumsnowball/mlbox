@@ -38,11 +38,9 @@ def test_dqn(run_on):
             in_dim = self.env.observation_space.shape[0]
             out_dim = self.env.action_space.n.item()
             self.policy = DQNNet(in_dim, out_dim,
-                                 hidden_dim=32,
-                                 device=self.device)
+                                 hidden_dim=32).to(self.device)
             self.target = DQNNet(in_dim, out_dim,
-                                 hidden_dim=32,
-                                 device=self.device)
+                                 hidden_dim=32).to(self.device)
             self.update_target()
             self.optimizer = Adam(self.policy.parameters(),
                                   lr=1e-3)

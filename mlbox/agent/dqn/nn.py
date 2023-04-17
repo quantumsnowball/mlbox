@@ -10,7 +10,6 @@ class DQNNet(Module):
                  in_dim: int,
                  out_dim: int,
                  *,
-                 device: T.device,
                  hidden_dim: int = 64,
                  hidden_n: int = 1,
                  Activation: type[Module] = ReLU):
@@ -28,8 +27,6 @@ class DQNNet(Module):
             # output
             Linear(hidden_dim, out_dim),
         )
-        # to device
-        self.to(device)
 
     def forward(self, obs: Tensor):
         return self.net(obs)

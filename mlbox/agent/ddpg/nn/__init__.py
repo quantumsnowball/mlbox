@@ -1,12 +1,10 @@
 from itertools import chain
-from typing import Self
 
 import torch as T
 import torch.nn.functional as F
 from numpy.typing import NDArray
 from torch import Tensor, tensor
-from torch.nn import Linear, Module, ReLU, Sequential
-from typing_extensions import override
+from torch.nn import Linear, Module, Parameter, ReLU, Sequential
 
 
 class DDPGActorNet(Module):
@@ -14,14 +12,12 @@ class DDPGActorNet(Module):
                  in_dim: int,
                  out_dim: int,
                  *,
-                 device: T.device,
                  hidden_dim: int = 256,
                  hidden_n: int = 1,
                  Activation: type[Module] = ReLU,
                  min_action: float | NDArray = -1,
                  max_action: float | NDArray = +1):
         super().__init__()
-        self.device = device
         # net
         self.net = Sequential(
             # input
@@ -36,10 +32,8 @@ class DDPGActorNet(Module):
             Linear(hidden_dim, out_dim),
         )
         # const
-        self.min_action = tensor(min_action, device=device)
-        self.max_action = tensor(max_action, device=device)
-        # to device
-        self.to(device)
+        self.min_action = Parameter(tensor(min_action), requires_grad=False)
+        self.max_action = Parameter(tensor(max_action), requires_grad=False)
 
     def forward(self, obs: Tensor):
         x = self.net(obs)
@@ -52,7 +46,6 @@ class DDPGCriticNet(Module):
                  obs_dim: int,
                  action_dim: int,
                  *,
-                 device: T.device,
                  hidden_dim: int = 256,
                  hidden_n: int = 0,
                  Activation: type[Module] = ReLU):
@@ -85,8 +78,6 @@ class DDPGCriticNet(Module):
             ) for _ in range(hidden_n))),
             Linear(hidden_dim, 1),
         )
-        # to device
-        self.to(device)
 
     def forward(self, obs: Tensor, action: Tensor):
         obs_net_out = self.obs_net(obs)

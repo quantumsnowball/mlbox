@@ -33,8 +33,7 @@ class MyAgent(A2CContinuousAgent[Obs, Action]):
         out_dim = self.env.action_space.shape[0]*2
         self.actor_critic_net = ActorCriticContinuous(in_dim, out_dim,
                                                       mu_clip=True,
-                                                      mu_scale=2.0,
-                                                      device=self.device)
+                                                      mu_scale=2.0).to(self.device)
         self.optimizer = optim.Adam(self.actor_critic_net.parameters(),
                                     lr=1e-2)
 

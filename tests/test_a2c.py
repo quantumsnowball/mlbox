@@ -32,7 +32,7 @@ def test_a2c_discrete(run_on):
             assert isinstance(self.env.action_space, Discrete)
             in_dim = self.env.observation_space.shape[0]
             out_dim = self.env.action_space.n.item()
-            self.actor_critic_net = ActorCriticDiscrete(in_dim, out_dim, device=self.device)
+            self.actor_critic_net = ActorCriticDiscrete(in_dim, out_dim).to(self.device)
             self.optimizer = optim.Adam(self.actor_critic_net.parameters(),
                                         lr=1e-2)
 
@@ -61,7 +61,7 @@ def test_a2c_continuous(run_on):
             assert isinstance(self.env.action_space, Box)
             in_dim = self.env.observation_space.shape[0]
             out_dim = self.env.action_space.shape[0]
-            self.actor_critic_net = ActorCriticContinuous(in_dim, out_dim, device=self.device)
+            self.actor_critic_net = ActorCriticContinuous(in_dim, out_dim).to(self.device)
             self.optimizer = optim.Adam(self.actor_critic_net.parameters(),
                                         lr=1e-2)
 

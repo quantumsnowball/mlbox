@@ -38,12 +38,10 @@ def test_pg(run_on):
             out_dim = self.env.action_space.n.item()
             self.policy_net = PolicyNet(in_dim, out_dim,
                                         hidden_dim=32,
-                                        Activation=Tanh,
-                                        device=self.device)
+                                        Activation=Tanh).to(self.device)
             self.baseline_net = BaselineNet(in_dim, 1,
                                             hidden_dim=32,
-                                            Activation=ReLU,
-                                            device=self.device)
+                                            Activation=ReLU).to(self.device)
             self.policy_optimizer = Adam(self.policy_net.parameters(), lr=1e-2)
             self.baseline_optimizer = Adam(
                 self.policy_net.parameters(), lr=1e-3)
