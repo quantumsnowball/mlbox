@@ -15,6 +15,7 @@ from typing_extensions import override
 
 from mlbox.agent.ddpg import DDPGAgent
 from mlbox.agent.ddpg.nn import DDPGActorNet, DDPGCriticNet
+from mlbox.agent.ddpg.nn.lstm import LSTM_DDPGActorNet, LSTM_DDPGCriticNet
 from mlbox.trenv import TrEnv
 from mlbox.utils import crop, pnl_ratio
 
@@ -125,14 +126,14 @@ class MyAgent(DDPGAgent[Obs, Action]):
         low = self.env.action_space.low
         self.min_noise = 0.2
         self.max_noise = high * 5
-        self.actor_net = DDPGActorNet(obs_dim, action_dim,
-                                      min_action=low,
-                                      max_action=high).to(self.device)
-        self.actor_net_target = DDPGActorNet(obs_dim, action_dim,
-                                             min_action=low,
-                                             max_action=high).to(self.device)
-        self.critic_net = DDPGCriticNet(obs_dim, action_dim).to(self.device)
-        self.critic_net_target = DDPGCriticNet(obs_dim, action_dim).to(self.device)
+        self.actor_net = LSTM_DDPGActorNet(obs_dim, action_dim,
+                                           min_action=low,
+                                           max_action=high).to(self.device)
+        self.actor_net_target = LSTM_DDPGActorNet(obs_dim, action_dim,
+                                                  min_action=low,
+                                                  max_action=high).to(self.device)
+        self.critic_net = LSTM_DDPGCriticNet(obs_dim, action_dim).to(self.device)
+        self.critic_net_target = LSTM_DDPGCriticNet(obs_dim, action_dim).to(self.device)
         self.actor_optimizer = optim.Adam(self.actor_net.parameters(), lr=1e-3)
         self.critic_optimizer = optim.Adam(self.critic_net.parameters(), lr=1e-3)
 
