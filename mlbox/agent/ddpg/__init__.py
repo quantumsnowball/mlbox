@@ -3,6 +3,8 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn.functional as F
+from torch import Tensor, tensor
+from torch.nn import Module
 from typing_extensions import override
 
 from mlbox.agent.basic import BasicAgent
@@ -69,6 +71,7 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
 
     @override
     def train(self) -> None:
+        self.log_graphs()
         self.sync_targets()
         self.actor_net.train()
         self.reset_rolling_reward()
@@ -105,9 +108,12 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
                 self.print_progress_bar(i_eps)
                 self.print_validation_result(i_eps)
                 self.render_showcase(i_eps)
+                # tensorboard
+                self.log_histogram(i_eps)
             except KeyboardInterrupt:
                 print(f'\nManually stopped training loop')
                 break
+        self.writer.close()
 
     min_noise = 0.02
     max_noise = 2.0
@@ -149,3 +155,33 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
                      critic=self.critic_net.state_dict())
         torch.save(state, path)
         print(f'Saved model: {path}')
+
+    #
+    # tensorboard
+    #
+    def log_graphs(self) -> None:
+        if not self.tensorboard:
+            return
+
+        class DisplayNet(Module):
+            def __init__(self, actor_net: Module, critic_net: Module) -> None:
+                super().__init__()
+                self.actor_net = actor_net
+                self.critic_net = critic_net
+
+            def forward(self, obs: Tensor):
+                action = self.actor_net(obs)
+                value = self.critic_net(obs, action)
+                return action, value
+        obs_sample = tensor(self.env.observation_space.sample(), device=self.device)
+        self.writer.add_graph(DisplayNet(self.actor_net, self.critic_net), obs_sample)
+
+    log_histogram_every = 10
+
+    def log_histogram(self, i_eps: int) -> None:
+        if not self.tensorboard:
+            return
+        if i_eps % self.log_histogram_every == 0:
+            for net in (self.actor_net, self.critic_net):
+                for name, param in net.named_parameters():
+                    self.writer.add_histogram(name, param, global_step=i_eps)

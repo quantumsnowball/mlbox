@@ -82,6 +82,6 @@ class DDPGCriticNet(Module):
     def forward(self, obs: Tensor, action: Tensor):
         obs_net_out = self.obs_net(obs)
         action_net_out = self.action_net(action)
-        common_in = T.relu(T.cat([obs_net_out, action_net_out], dim=1))
+        common_in = T.relu(T.cat([obs_net_out, action_net_out], dim=-1))
         q = self.common_net(common_in)
         return q

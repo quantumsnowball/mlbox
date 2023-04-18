@@ -5,15 +5,17 @@ from typing import Self
 
 import torch as T
 from gymnasium import Env
+from torch.utils.tensorboard.writer import SummaryWriter
 from typing_extensions import override
 
 from mlbox.agent import Agent
+from mlbox.agent.props import BasicAgentProps
 from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
-from mlbox.utils.wrapper import assured
 
 
-class BasicAgent(Agent[T_Obs, T_Action]):
+class BasicAgent(Agent[T_Obs, T_Action],
+                 BasicAgentProps[T_Obs, T_Action]):
     '''
     Implement common props of an Agent
     '''
@@ -31,30 +33,8 @@ class BasicAgent(Agent[T_Obs, T_Action]):
     def __init__(self) -> None:
         super().__init__()
         self.progress = 0.0
-
-    #
-    # env
-    #
-
-    @property
-    @assured
-    def env(self) -> Env[T_Obs, T_Action]:
-        ''' a gym.Env compatible object '''
-        return self._env
-
-    @env.setter
-    def env(self, env: Env[T_Obs, T_Action]) -> None:
-        self._env = env
-
-    @property
-    @assured
-    def render_env(self) -> Env[T_Obs, T_Action]:
-        ''' a gym.Env compatible object for human render mode'''
-        return self._render_env
-
-    @render_env.setter
-    def render_env(self, render_env: Env[T_Obs, T_Action]) -> None:
-        self._render_env = render_env
+        if self.tensorboard:
+            self.writer = SummaryWriter(self.tensorboard_logdir)
 
     #
     # training
@@ -148,3 +128,10 @@ class BasicAgent(Agent[T_Obs, T_Action]):
             self.train()
             if input(f'Save model? [y]/n) ').upper() != 'N':
                 self.save(path)
+
+    #
+    # tensorboard
+    #
+
+    tensorboard = False
+    tensorboard_logdir = './.runs'

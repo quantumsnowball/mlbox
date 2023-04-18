@@ -104,6 +104,6 @@ class LSTM_DDPGCriticNet(Module):
         lstm_out, _ = self.lstm(obs.unsqueeze(-1))
         obs_net_out = self.obs_net(lstm_out.flatten(-2))
         action_net_out = self.action_net(action)
-        common_in = T.relu(T.cat([obs_net_out, action_net_out], dim=1))
+        common_in = T.relu(T.cat([obs_net_out, action_net_out], dim=-1))
         q = self.common_net(common_in)
         return q
