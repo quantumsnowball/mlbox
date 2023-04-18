@@ -5,6 +5,7 @@ from typing import Self
 
 import torch as T
 from gymnasium import Env
+from torch.utils.tensorboard.writer import SummaryWriter
 from typing_extensions import override
 
 from mlbox.agent import Agent
@@ -32,6 +33,8 @@ class BasicAgent(Agent[T_Obs, T_Action],
     def __init__(self) -> None:
         super().__init__()
         self.progress = 0.0
+        if self.tensorboard:
+            self.writer = SummaryWriter(self.tensorboard_logdir)
 
     #
     # training
@@ -125,3 +128,10 @@ class BasicAgent(Agent[T_Obs, T_Action],
             self.train()
             if input(f'Save model? [y]/n) ').upper() != 'N':
                 self.save(path)
+
+    #
+    # tensorboard
+    #
+
+    tensorboard = False
+    tensorboard_logdir = './.runs'
