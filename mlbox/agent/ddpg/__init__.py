@@ -108,6 +108,8 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
                 self.print_progress_bar(i_eps)
                 self.print_validation_result(i_eps)
                 self.render_showcase(i_eps)
+                # tensorboard
+                self.log_histogram(i_eps)
             except KeyboardInterrupt:
                 print(f'\nManually stopped training loop')
                 break
@@ -173,3 +175,13 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
                 return action, value
         obs_sample = tensor(self.env.observation_space.sample(), device=self.device)
         self.writer.add_graph(DisplayNet(self.actor_net, self.critic_net), obs_sample)
+
+    log_histogram_every = 10
+
+    def log_histogram(self, i_eps: int) -> None:
+        if not self.tensorboard:
+            return
+        if i_eps % self.log_histogram_every == 0:
+            for net in (self.actor_net, self.critic_net):
+                for name, param in net.named_parameters():
+                    self.writer.add_histogram(name, param, global_step=i_eps)

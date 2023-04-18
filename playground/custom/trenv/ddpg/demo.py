@@ -14,14 +14,13 @@ from trbox.trader import Trader
 from typing_extensions import override
 
 from mlbox.agent.ddpg import DDPGAgent
-from mlbox.agent.ddpg.nn import DDPGActorNet, DDPGCriticNet
 from mlbox.agent.ddpg.nn.lstm import LSTM_DDPGActorNet, LSTM_DDPGCriticNet
 from mlbox.trenv import TrEnv
 from mlbox.utils import crop, pnl_ratio
 
 SYMBOL = 'BTC-USD'
 SYMBOLS = (SYMBOL, )
-START = '2022-01-01'
+START = '2021-01-01'
 END = '2022-12-31'
 LENGTH = 200
 INTERVAL = 5
