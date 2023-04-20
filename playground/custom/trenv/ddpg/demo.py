@@ -22,7 +22,7 @@ from mlbox.utils import crop, pnl_ratio
 SYMBOL = 'BTC-USD'
 SYMBOLS = (SYMBOL, )
 # train
-START = '2016-01-01'
+START = '2017-01-01'
 END = '2019-12-31'
 # test
 # START = '2020-01-01'
@@ -57,10 +57,10 @@ def act(my: Context[OhlcvWindow], action: Action) -> float:
 
 def grant(my: Context[OhlcvWindow]) -> Reward:
     eq = my.portfolio.dashboard.equity
-    # pr = my.memory['price'][INTERVAL]
+    pr = my.memory['price'][INTERVAL]
     eq_r = np.float32(np.log(eq[-1] / eq[-INTERVAL]))
-    # pr_r = np.float32(pr[-1] / pr[-INTERVAL] - 1)
-    reward = eq_r  # - pr_r
+    pr_r = np.float32(np.log(pr[-1] / pr[-INTERVAL]))
+    reward = eq_r - pr_r
     return reward
 
 
@@ -108,7 +108,7 @@ class MyAgent(DDPGAgent[Obs, Action]):
     device = T.device('cuda')
     max_step = 500
     n_eps = 5000
-    n_epoch = 5
+    n_epoch = 2
     replay_size = 100*max_step
     batch_size = 256
     update_target_every = 10
