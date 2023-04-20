@@ -14,14 +14,19 @@ from trbox.trader import Trader
 from typing_extensions import override
 
 from mlbox.agent.ddpg import DDPGAgent
+from mlbox.agent.ddpg.nn import DDPGActorNet, DDPGCriticNet
 from mlbox.agent.ddpg.nn.lstm import LSTM_DDPGActorNet, LSTM_DDPGCriticNet
 from mlbox.trenv import TrEnv
 from mlbox.utils import crop, pnl_ratio
 
 SYMBOL = 'BTC-USD'
 SYMBOLS = (SYMBOL, )
-START = '2021-01-01'
-END = '2022-12-31'
+# train
+START = '2016-01-01'
+END = '2019-12-31'
+# test
+# START = '2020-01-01'
+# END = '2023-04-20'
 LENGTH = 200
 INTERVAL = 5
 STEP = 0.2
@@ -103,16 +108,17 @@ class MyAgent(DDPGAgent[Obs, Action]):
     device = T.device('cuda')
     max_step = 500
     n_eps = 5000
-    n_epoch = 3
-    replay_size = 1000*max_step
-    batch_size = 128
+    n_epoch = 5
+    replay_size = 100*max_step
+    batch_size = 256
     update_target_every = 10
     print_hash_every = 5
     rolling_reward_ma = 20
     report_progress_every = 50
     render_every = 500
-    mean_reward_display_format = '+.2%'
+    mean_reward_display_format = '+.6%'
     tensorboard = False
+    gamma = 1
 
     def __init__(self) -> None:
         super().__init__()
@@ -126,14 +132,22 @@ class MyAgent(DDPGAgent[Obs, Action]):
         low = self.env.action_space.low
         self.min_noise = 0.2
         self.max_noise = high * 1.0
-        self.actor_net = LSTM_DDPGActorNet(obs_dim, action_dim,
-                                           min_action=low,
-                                           max_action=high).to(self.device)
-        self.actor_net_target = LSTM_DDPGActorNet(obs_dim, action_dim,
-                                                  min_action=low,
-                                                  max_action=high).to(self.device)
-        self.critic_net = LSTM_DDPGCriticNet(obs_dim, action_dim).to(self.device)
-        self.critic_net_target = LSTM_DDPGCriticNet(obs_dim, action_dim).to(self.device)
+        self.actor_net = DDPGActorNet(obs_dim, action_dim,
+                                      min_action=low,
+                                      max_action=high).to(self.device)
+        self.actor_net_target = DDPGActorNet(obs_dim, action_dim,
+                                             min_action=low,
+                                             max_action=high).to(self.device)
+        self.critic_net = DDPGCriticNet(obs_dim, action_dim).to(self.device)
+        self.critic_net_target = DDPGCriticNet(obs_dim, action_dim).to(self.device)
+        # self.actor_net = LSTM_DDPGActorNet(obs_dim, action_dim,
+        #                                    min_action=low,
+        #                                    max_action=high).to(self.device)
+        # self.actor_net_target = LSTM_DDPGActorNet(obs_dim, action_dim,
+        #                                           min_action=low,
+        #                                           max_action=high).to(self.device)
+        # self.critic_net = LSTM_DDPGCriticNet(obs_dim, action_dim).to(self.device)
+        # self.critic_net_target = LSTM_DDPGCriticNet(obs_dim, action_dim).to(self.device)
         self.actor_optimizer = optim.Adam(self.actor_net.parameters(), lr=1e-3)
         self.critic_optimizer = optim.Adam(self.critic_net.parameters(), lr=1e-3)
 
@@ -158,7 +172,7 @@ def agent_step(my: Context[OhlcvWindow]):
         action = agent.decide(obs)
         target_weight = act(my, action)
         # mark
-        # my.mark['pnlr-raw'] = pnl_ratio(win)[-1]
+        my.mark['pnlr'] = pnl_ratio(my.event.win['Close'])[-1]
         my.mark['action'] = action.item()
         my.mark['target_weight'] = target_weight
         my.mark['reward'] = grant(my)
