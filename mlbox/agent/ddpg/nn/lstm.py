@@ -5,7 +5,8 @@ import torch as T
 import torch.nn.functional as F
 from numpy.typing import NDArray
 from torch import Tensor, tensor
-from torch.nn import LSTM, Linear, Module, Parameter, ReLU, Sequential
+from torch.nn import (LSTM, Conv1d, LazyLinear, Linear, Module, Parameter,
+                      ReLU, Sequential)
 
 
 class LSTM_DDPGActorNet(Module):
@@ -22,15 +23,23 @@ class LSTM_DDPGActorNet(Module):
                  lstm_layers_n: int = 2):
         super().__init__()
         # const
-        self.lstm_L = in_dim
-        self.lstm_feat = in_dim*lstm_hidden_dim
         self.min_action = Parameter(tensor(min_action), requires_grad=False)
         self.max_action = Parameter(tensor(max_action), requires_grad=False)
+        # conv1d
+        self.conv1d = Conv1d(in_channels=1,
+                             out_channels=16,
+                             kernel_size=10,
+                             stride=3,
+                             padding=2,
+                             )
+        self.conv1d_feat = (in_dim - self.conv1d.kernel_size[0] +
+                            2 * int(self.conv1d.padding[0])) / self.conv1d.stride[0] + 1
         # lstm
-        self.lstm = LSTM(input_size=1,
+        self.lstm = LSTM(input_size=16,
                          hidden_size=lstm_hidden_dim,
                          num_layers=lstm_layers_n,
                          batch_first=True)
+        self.lstm_feat = int(self.conv1d_feat*lstm_hidden_dim)
         # fc
         self.fc = Sequential(
             Linear(self.lstm_feat, hidden_dim),
@@ -45,7 +54,9 @@ class LSTM_DDPGActorNet(Module):
         )
 
     def forward(self, obs: Tensor):
-        x = obs.unsqueeze(-1)
+        x = obs.unsqueeze(-2)
+        x = self.conv1d(x)
+        x = x.transpose(-2, -1)
         x, _ = self.lstm(x)
         x = x.flatten(-2)
         x = self.fc(x)

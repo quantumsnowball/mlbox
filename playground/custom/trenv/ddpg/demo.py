@@ -111,7 +111,7 @@ class MyAgent(DDPGAgent[Obs, Action]):
     rolling_reward_ma = 20
     report_progress_every = 50
     render_every = 500
-    mean_reward_display_format = '+.4'
+    mean_reward_display_format = '+.2%'
     tensorboard = True
 
     def __init__(self) -> None:
