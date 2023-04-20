@@ -53,7 +53,7 @@ def act(my: Context[OhlcvWindow], action: Action) -> float:
 def grant(my: Context[OhlcvWindow]) -> Reward:
     eq = my.portfolio.dashboard.equity
     # pr = my.memory['price'][INTERVAL]
-    eq_r = np.float32(eq[-1] / eq[-INTERVAL] - 1)
+    eq_r = np.float32(np.log(eq[-1] / eq[-INTERVAL]))
     # pr_r = np.float32(pr[-1] / pr[-INTERVAL] - 1)
     reward = eq_r  # - pr_r
     return reward
@@ -112,7 +112,7 @@ class MyAgent(DDPGAgent[Obs, Action]):
     report_progress_every = 50
     render_every = 500
     mean_reward_display_format = '+.2%'
-    tensorboard = True
+    tensorboard = False
 
     def __init__(self) -> None:
         super().__init__()
@@ -125,7 +125,7 @@ class MyAgent(DDPGAgent[Obs, Action]):
         high = self.env.action_space.high
         low = self.env.action_space.low
         self.min_noise = 0.2
-        self.max_noise = high * 5
+        self.max_noise = high * 1.0
         self.actor_net = LSTM_DDPGActorNet(obs_dim, action_dim,
                                            min_action=low,
                                            max_action=high).to(self.device)

@@ -125,7 +125,8 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
             action = action.cpu().numpy()
             std = self.min_noise + (1-progress)*(self.max_noise-self.min_noise)
             noise = np.random.normal(0, std, action.shape)
-            return action + noise
+            action_with_noise = np.clip(action + noise, 0, 1)
+            return action_with_noise
 
     @override
     def decide(self, obs: T_Obs) -> T_Action:
