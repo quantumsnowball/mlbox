@@ -113,7 +113,7 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
             except KeyboardInterrupt:
                 print(f'\nManually stopped training loop')
                 break
-        self.writer.close()
+        self.close_writer()
 
     min_noise = 0.02
     max_noise = 2.0
@@ -160,6 +160,11 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
     #
     # tensorboard
     #
+    def close_writer(self) -> None:
+        if not self.tensorboard:
+            return
+        self.writer.close()
+
     def log_graphs(self) -> None:
         if not self.tensorboard:
             return
