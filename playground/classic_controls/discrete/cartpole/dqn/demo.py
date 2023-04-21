@@ -2,7 +2,6 @@ import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
 import torch as T
-from gymnasium.spaces import Box, Discrete
 from torch.nn import MSELoss
 from torch.optim import Adam
 
@@ -33,14 +32,10 @@ class MyAgent(DQNAgent[Obs, Action]):
         super().__init__()
         self.env = gym.make(ENV)
         self.render_env = gym.make(ENV, render_mode='human')
-        assert isinstance(self.env.observation_space, Box)
-        assert isinstance(self.env.action_space, Discrete)
-        in_dim = self.env.observation_space.shape[0]
-        out_dim = self.env.action_space.n.item()
-        self.policy = DQNNet(in_dim, out_dim,
+        self.policy = DQNNet(self.obs_dim, self.action_dim,
                              hidden_dim=64,
                              hidden_n=0).to(self.device)
-        self.target = DQNNet(in_dim, out_dim,
+        self.target = DQNNet(self.obs_dim, self.action_dim,
                              hidden_dim=64,
                              hidden_n=0).to(self.device)
         self.update_target()

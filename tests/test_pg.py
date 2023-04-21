@@ -32,14 +32,10 @@ def test_pg(run_on):
         def __init__(self) -> None:
             super().__init__()
             self.env = gym.make(ENV)
-            assert isinstance(self.env.observation_space, Box)
-            assert isinstance(self.env.action_space, Discrete)
-            in_dim = self.env.observation_space.shape[0]
-            out_dim = self.env.action_space.n.item()
-            self.policy_net = PolicyNet(in_dim, out_dim,
+            self.policy_net = PolicyNet(self.obs_dim, self.action_dim,
                                         hidden_dim=32,
                                         Activation=Tanh).to(self.device)
-            self.baseline_net = BaselineNet(in_dim, 1,
+            self.baseline_net = BaselineNet(self.obs_dim, 1,
                                             hidden_dim=32,
                                             Activation=ReLU).to(self.device)
             self.policy_optimizer = Adam(self.policy_net.parameters(), lr=1e-2)

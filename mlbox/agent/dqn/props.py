@@ -1,12 +1,38 @@
 
+from typing import Generic
+
+from gymnasium import Env
+from gymnasium.spaces import Box, Discrete
 from torch.nn import Module
 from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
 
+from mlbox.types import T_Action, T_Obs
 from mlbox.utils.wrapper import assured
 
 
-class DQNProps:
+class DQNProps(Generic[T_Obs, T_Action]):
+    #
+    # env
+    #
+
+    @property
+    @assured
+    def env(self) -> Env[T_Obs, T_Action]:
+        return self._env
+
+    @env.setter
+    def env(self, env: Env[T_Obs, T_Action]) -> None:
+        self._env = env
+        assert isinstance(self.env.observation_space, Box)
+        assert isinstance(self.env.action_space, Discrete)
+        self.action_space = self.env.action_space
+        self.obs_dim = self.env.observation_space.shape[0]
+        self.action_dim = self.env.action_space.n.item()
+
+    #
+    # agent
+    #
     @property
     @assured
     def policy(self) -> Module:

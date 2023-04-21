@@ -3,7 +3,6 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn.functional as F
-from gymnasium.spaces import Box
 from torch import Tensor, tensor
 from torch.nn import Module
 from typing_extensions import override
@@ -15,8 +14,8 @@ from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
-class DDPGAgent(BasicAgent[T_Obs, T_Action],
-                DDPGProps):
+class DDPGAgent(DDPGProps[T_Obs, T_Action],
+                BasicAgent[T_Obs, T_Action]):
     # replay memory
     replay_size = 10000
 

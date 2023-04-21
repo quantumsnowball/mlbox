@@ -13,7 +13,8 @@ from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
-class PGAgent(BasicAgent[T_Obs, T_Action], PGProps):
+class PGAgent(PGProps[T_Obs, T_Action],
+              BasicAgent[T_Obs, T_Action]):
     reward_to_go = False
     baseline = False
 

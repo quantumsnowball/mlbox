@@ -3,7 +3,6 @@ import numpy as np
 import numpy.typing as npt
 import torch as T
 import torch.optim as optim
-from gymnasium.spaces import Box, Discrete
 
 from mlbox.agent.a2c import A2CDiscreteAgent
 from mlbox.agent.a2c.nn import ActorCriticDiscrete
@@ -27,11 +26,7 @@ class MyAgent(A2CDiscreteAgent[Obs, Action]):
         super().__init__()
         self.env = gym.make(ENV)
         self.render_env = gym.make(ENV, render_mode='human')
-        assert isinstance(self.env.observation_space, Box)
-        assert isinstance(self.env.action_space, Discrete)
-        in_dim = self.env.observation_space.shape[0]
-        out_dim = self.env.action_space.n.item()
-        self.actor_critic_net = ActorCriticDiscrete(in_dim, out_dim).to(self.device)
+        self.actor_critic_net = ActorCriticDiscrete(self.obs_dim, self.action_dim).to(self.device)
         self.optimizer = optim.Adam(self.actor_critic_net.parameters(),
                                     lr=1e-2)
 

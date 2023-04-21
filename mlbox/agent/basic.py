@@ -14,8 +14,8 @@ from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
-class BasicAgent(Agent[T_Obs, T_Action],
-                 BasicAgentProps[T_Obs, T_Action]):
+class BasicAgent(BasicAgentProps[T_Obs, T_Action],
+                 Agent[T_Obs, T_Action]):
     '''
     Implement common props of an Agent
     '''

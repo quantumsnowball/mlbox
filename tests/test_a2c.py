@@ -4,9 +4,8 @@ import numpy.typing as npt
 import pytest
 import torch as T
 import torch.optim as optim
-from gymnasium.spaces import Box, Discrete
 
-from mlbox.agent.a2c import A2CDiscreteAgent
+from mlbox.agent.a2c import A2CContinuousAgent, A2CDiscreteAgent
 from mlbox.agent.a2c.nn import ActorCriticContinuous, ActorCriticDiscrete
 
 
@@ -28,11 +27,7 @@ def test_a2c_discrete(run_on):
         def __init__(self) -> None:
             super().__init__()
             self.env = gym.make(env)
-            assert isinstance(self.env.observation_space, Box)
-            assert isinstance(self.env.action_space, Discrete)
-            in_dim = self.env.observation_space.shape[0]
-            out_dim = self.env.action_space.n.item()
-            self.actor_critic_net = ActorCriticDiscrete(in_dim, out_dim).to(self.device)
+            self.actor_critic_net = ActorCriticDiscrete(self.obs_dim, self.action_dim).to(self.device)
             self.optimizer = optim.Adam(self.actor_critic_net.parameters(),
                                         lr=1e-2)
 
@@ -46,7 +41,7 @@ def test_a2c_continuous(run_on):
     Obs = npt.NDArray[np.float32]
     Action = npt.NDArray[np.float32]
 
-    class MyAgent(A2CDiscreteAgent[Obs, Action]):
+    class MyAgent(A2CContinuousAgent[Obs, Action]):
         device = T.device(run_on)
         max_step = 500
         n_eps = 5
@@ -57,11 +52,7 @@ def test_a2c_continuous(run_on):
         def __init__(self) -> None:
             super().__init__()
             self.env = gym.make(env)
-            assert isinstance(self.env.observation_space, Box)
-            assert isinstance(self.env.action_space, Box)
-            in_dim = self.env.observation_space.shape[0]
-            out_dim = self.env.action_space.shape[0]
-            self.actor_critic_net = ActorCriticContinuous(in_dim, out_dim).to(self.device)
+            self.actor_critic_net = ActorCriticContinuous(self.obs_dim, self.action_dim*2).to(self.device)
             self.optimizer = optim.Adam(self.actor_critic_net.parameters(),
                                         lr=1e-2)
 

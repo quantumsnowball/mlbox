@@ -115,11 +115,9 @@ class MyAgent(DQNAgent[Obs, Action]):
     def __init__(self) -> None:
         super().__init__()
         self.env = MyEnv()
-        in_dim = self.env.observation_space.shape[0]
-        out_dim = self.env.action_space.n.item()
-        self.policy = DQNNet(in_dim, out_dim,
+        self.policy = DQNNet(self.obs_dim, self.action_dim,
                              hidden_dim=32).to(self.device)
-        self.target = DQNNet(in_dim, out_dim,
+        self.target = DQNNet(self.obs_dim, self.action_dim,
                              hidden_dim=32).to(self.device)
         self.update_target()
         self.optimizer = Adam(self.policy.parameters(),
