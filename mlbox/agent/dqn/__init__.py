@@ -13,9 +13,9 @@ from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
-class DQNAgent(BasicAgent[T_Obs, T_Action],
+class DQNAgent(DQNProps[T_Obs, T_Action],
                EpsilonGreedyStrategy[T_Obs, T_Action],
-               DQNProps):
+               BasicAgent[T_Obs, T_Action]):
     # replay memory
     replay_size = 10000
 
