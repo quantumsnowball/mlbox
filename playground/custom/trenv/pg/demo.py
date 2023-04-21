@@ -114,16 +114,12 @@ class MyAgent(PGAgent[Obs, Action]):
     def __init__(self) -> None:
         super().__init__()
         self.env = MyEnv()
-        in_dim = self.env.observation_space.shape[0]
-        out_dim = self.env.action_space.n.item()
-        self.policy_net = PolicyNet(in_dim, out_dim,
+        self.policy_net = PolicyNet(self.obs_dim, self.action_dim,
                                     hidden_dim=32,
-                                    Activation=Tanh,
-                                    device=self.device)
-        self.baseline_net = BaselineNet(in_dim, 1,
+                                    Activation=Tanh).to(self.device)
+        self.baseline_net = BaselineNet(self.obs_dim, 1,
                                         hidden_dim=32,
-                                        Activation=ReLU,
-                                        device=self.device)
+                                        Activation=ReLU).to(self.device)
         self.policy_optimizer = Adam(self.policy_net.parameters(), lr=1e-2)
         self.baseline_optimizer = Adam(self.policy_net.parameters(), lr=1e-3)
 
