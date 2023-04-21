@@ -9,11 +9,13 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from typing_extensions import override
 
 from mlbox.agent import Agent
+from mlbox.agent.props import BasicAgentProps
 from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
-class BasicAgent(Agent[T_Obs, T_Action]):
+class BasicAgent(BasicAgentProps[T_Obs, T_Action],
+                 Agent[T_Obs, T_Action]):
     '''
     Implement common props of an Agent
     '''

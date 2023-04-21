@@ -14,8 +14,8 @@ from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
-class DDPGAgent(BasicAgent[T_Obs, T_Action],
-                DDPGProps[T_Obs, T_Action]):
+class DDPGAgent(DDPGProps[T_Obs, T_Action],
+                BasicAgent[T_Obs, T_Action]):
     # replay memory
     replay_size = 10000
 

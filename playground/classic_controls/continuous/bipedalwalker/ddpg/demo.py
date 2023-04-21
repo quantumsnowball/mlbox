@@ -3,7 +3,6 @@ import numpy as np
 import numpy.typing as npt
 import torch as T
 import torch.optim as optim
-from gymnasium.spaces import Box
 
 from mlbox.agent.ddpg import DDPGAgent
 from mlbox.agent.ddpg.nn import DDPGActorNet, DDPGCriticNet

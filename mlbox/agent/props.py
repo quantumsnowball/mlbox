@@ -1,15 +1,13 @@
-from typing import Generic, Iterable
+from typing import Generic
 
 from gymnasium import Env
-from torch.nn import Module
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from mlbox.agent import AgentProps
 from mlbox.types import T_Action, T_Obs
 from mlbox.utils.wrapper import assured
 
 
-class BasicAgentProps(AgentProps[T_Obs, T_Action]):
+class BasicAgentProps(Generic[T_Obs, T_Action]):
     #
     # env
     #
