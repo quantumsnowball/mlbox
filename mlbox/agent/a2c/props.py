@@ -71,4 +71,4 @@ class A2CDiscreteProps(Generic[T_Obs, T_Action]):
         assert isinstance(self.env.action_space, Discrete)
         self.action_space = self.env.action_space
         self.obs_dim = self.env.observation_space.shape[0]
-        self.action_dim = self.env.action_space.n
+        self.action_dim = self.env.action_space.n.item()
