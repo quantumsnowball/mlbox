@@ -1,13 +1,38 @@
+from gymnasium import Env
+from gymnasium.spaces import Box
 from torch.nn import Module
 from torch.optim import Optimizer
 
+from mlbox.agent.props import BasicAgentProps
+from mlbox.types import T_Action, T_Obs
 from mlbox.utils.wrapper import assured
 
 
-class DDPGProps:
+class DDPGProps(BasicAgentProps[T_Obs, T_Action]):
+    #
+    # env
+    #
+
+    @property
+    @assured
+    def env(self) -> Env[T_Obs, T_Action]:
+        return self._env
+
+    @env.setter
+    def env(self, env: Env[T_Obs, T_Action]) -> None:
+        self._env = env
+        assert isinstance(self.env.observation_space, Box)
+        assert isinstance(self.env.action_space, Box)
+        self.action_space = self.env.action_space
+        self.obs_dim = self.env.observation_space.shape[0]
+        self.action_dim = self.env.action_space.shape[0]
+        self.min_action = self.action_space.low
+        self.max_action = self.action_space.high
+
     #
     # actor
     #
+
     @property
     @assured
     def actor_net(self) -> Module:
