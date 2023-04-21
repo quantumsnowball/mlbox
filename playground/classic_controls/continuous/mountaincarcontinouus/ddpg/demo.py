@@ -33,18 +33,14 @@ class MyAgent(DDPGAgent[Obs, Action]):
         super().__init__()
         self.env = gym.make(ENV)
         self.render_env = gym.make(ENV, render_mode='human')
-        assert isinstance(self.env.observation_space, Box)
-        assert isinstance(self.env.action_space, Box)
-        obs_dim = self.env.observation_space.shape[0]
-        action_dim = self.env.action_space.shape[0]
-        self.actor_net = DDPGActorNet(obs_dim, action_dim,
+        self.actor_net = DDPGActorNet(self.obs_dim, self.action_dim,
                                       min_action=-2,
                                       max_action=+2).to(self.device)
-        self.actor_net_target = DDPGActorNet(obs_dim, action_dim,
+        self.actor_net_target = DDPGActorNet(self.obs_dim, self.action_dim,
                                              min_action=-2,
                                              max_action=+2).to(self.device)
-        self.critic_net = DDPGCriticNet(obs_dim, action_dim).to(self.device)
-        self.critic_net_target = DDPGCriticNet(obs_dim, action_dim).to(self.device)
+        self.critic_net = DDPGCriticNet(self.obs_dim, self.action_dim).to(self.device)
+        self.critic_net_target = DDPGCriticNet(self.obs_dim, self.action_dim).to(self.device)
         self.actor_optimizer = optim.Adam(self.actor_net.parameters(), lr=5e-3)
         self.critic_optimizer = optim.Adam(self.critic_net.parameters(), lr=5e-3)
 
