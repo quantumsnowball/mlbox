@@ -128,16 +128,16 @@ class MyAgent(DDPGAgent[Obs, Action]):
         assert isinstance(self.env.action_space, Box)
         obs_dim = self.env.observation_space.shape[0]
         action_dim = self.env.action_space.shape[0]
-        high = self.env.action_space.high
-        low = self.env.action_space.low
+        self.min_action = self.env.action_space.low
+        self.max_action = self.env.action_space.high
         self.min_noise = 0.2
-        self.max_noise = high * 1.0
+        self.max_noise = self.max_action * 1.0
         self.actor_net = DDPGActorNet(obs_dim, action_dim,
-                                      min_action=low,
-                                      max_action=high).to(self.device)
+                                      min_action=self.min_action,
+                                      max_action=self.max_action).to(self.device)
         self.actor_net_target = DDPGActorNet(obs_dim, action_dim,
-                                             min_action=low,
-                                             max_action=high).to(self.device)
+                                             min_action=self.min_action,
+                                             max_action=self.max_action).to(self.device)
         self.critic_net = DDPGCriticNet(obs_dim, action_dim).to(self.device)
         self.critic_net_target = DDPGCriticNet(obs_dim, action_dim).to(self.device)
         # self.actor_net = LSTM_DDPGActorNet(obs_dim, action_dim,

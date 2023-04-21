@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn.functional as F
+from gymnasium.spaces import Box
 from torch import Tensor, tensor
 from torch.nn import Module
 from typing_extensions import override
@@ -22,6 +23,8 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
     def __init__(self) -> None:
         super().__init__()
         self.replay = CachedReplay[T_Obs, T_Action](self.replay_size)
+        self.min_action = 0
+        self.max_action = 1
 
     polyak = 0.9
 
@@ -125,7 +128,7 @@ class DDPGAgent(BasicAgent[T_Obs, T_Action],
             action = action.cpu().numpy()
             std = self.min_noise + (1-progress)*(self.max_noise-self.min_noise)
             noise = np.random.normal(0, std, action.shape)
-            action_with_noise = np.clip(action + noise, 0, 1)
+            action_with_noise = np.clip(action + noise, self.min_action, self.max_action)
             return action_with_noise
 
     @override
