@@ -1,12 +1,11 @@
 from itertools import chain
-from typing import Any
 
 import torch as T
 import torch.nn.functional as F
+from numpy import float32
 from numpy.typing import NDArray
 from torch import Tensor, tensor
-from torch.nn import (LSTM, Conv1d, LazyLinear, Linear, Module, Parameter,
-                      ReLU, Sequential)
+from torch.nn import LSTM, Conv1d, Linear, Module, Parameter, ReLU, Sequential
 
 
 class LSTM_DDPGActorNet(Module):
@@ -17,8 +16,8 @@ class LSTM_DDPGActorNet(Module):
                  hidden_dim: int = 256,
                  hidden_n: int = 1,
                  Activation: type[Module] = ReLU,
-                 min_action: float | NDArray = -1,
-                 max_action: float | NDArray = +1,
+                 min_action: float | NDArray[float32] = -1,
+                 max_action: float | NDArray[float32] = +1,
                  lstm_hidden_dim: int = 64,
                  lstm_layers_n: int = 2):
         super().__init__()

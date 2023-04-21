@@ -1,5 +1,5 @@
 import numpy as np
-import torch
+from numpy.typing import NDArray
 
 
 class OrnsteinUhlenbeckNoise:
@@ -14,6 +14,6 @@ class OrnsteinUhlenbeckNoise:
         self.sigma = sigma
         self.x = np.ones(action_space) * self.mu
 
-    def __call__(self) -> np.ndarray:
+    def __call__(self) -> NDArray[np.float32]:
         self.x += self.theta * (self.mu - self.x) + self.sigma * np.random.randn(self.action_space)
         return self.x.copy()
