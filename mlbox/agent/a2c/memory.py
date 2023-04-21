@@ -21,9 +21,6 @@ class Experience(Generic[T_Obs,
     terminated: bool
 
 
-ExperiencesTuple = tuple[Tensor, Tensor, Tensor, Tensor, Tensor, ]
-
-
 @dataclass
 class Experiences:
     obs: Tensor
@@ -33,9 +30,8 @@ class Experiences:
     terminated: Tensor
 
     @property
-    def tuple(self) -> ExperiencesTuple:
-        exp_tuple: ExperiencesTuple = astuple(self)
-        return exp_tuple
+    def tuple(self) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, ]:
+        return (self.obs, self.action, self.reward, self.next_obs, self.terminated)
 
 
 class Buffer(Generic[T_Obs, T_Action]):

@@ -22,11 +22,8 @@ class Experience(Generic[T_Obs,
 
     def __post_init__(self) -> None:
         # post processing
-        self.action = self.action.astype(np.float32)
+        self.action = np.asarray(self.action.astype(np.float32))
         self.reward = np.float32(self.reward)
-
-
-BatchTuple = tuple[Tensor, Tensor, Tensor, Tensor, Tensor, ]
 
 
 @dataclass
@@ -38,9 +35,8 @@ class Batch:
     terminated: Tensor
 
     @property
-    def tuple(self) -> BatchTuple:
-        batch_tuple: BatchTuple = astuple(self)
-        return batch_tuple
+    def tuple(self) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, ]:
+        return (self.obs, self.action, self.reward, self.next_obs, self.terminated)
 
 
 class Replay(Dataset[Experience[T_Obs, T_Action]],
