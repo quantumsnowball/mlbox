@@ -5,7 +5,8 @@ from torch.nn.utils.clip_grad import clip_grad_norm_
 from typing_extensions import override
 
 from mlbox.agent.a2c.memory import Buffer
-from mlbox.agent.a2c.props import A2CContinuousProps, A2CProps
+from mlbox.agent.a2c.props import (A2CContinuousProps, A2CDiscreteProps,
+                                   A2CProps)
 from mlbox.agent.basic import BasicAgent
 from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
@@ -119,7 +120,8 @@ class A2CAgent(A2CProps[T_Obs, T_Action],
         print(f'Saved model: {path}')
 
 
-class A2CDiscreteAgent(A2CAgent[T_Obs, T_Action]):
+class A2CDiscreteAgent(A2CDiscreteProps[T_Obs, T_Action],
+                       A2CAgent[T_Obs, T_Action]):
     def __init__(self) -> None:
         super().__init__()
 
