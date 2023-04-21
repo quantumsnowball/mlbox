@@ -11,7 +11,7 @@ from mlbox.agent.dqn.nn import DQNNet
 ENV = 'CartPole-v1'
 
 Obs = npt.NDArray[np.float32]
-Action = np.int64
+Action = npt.NDArray[np.int64]
 
 
 class MyAgent(DQNAgent[Obs, Action]):

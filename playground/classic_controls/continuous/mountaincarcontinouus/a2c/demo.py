@@ -11,7 +11,7 @@ from mlbox.agent.a2c.nn import ActorCriticContinuous
 ENV = 'MountainCarContinuous-v0'
 
 Obs = npt.NDArray[np.float32]
-Action = np.int64
+Action = npt.NDArray[np.float32]
 
 
 class MyAgent(A2CContinuousAgent[Obs, Action]):

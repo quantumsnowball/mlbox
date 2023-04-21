@@ -1,6 +1,6 @@
-from typing import TypeVar
+from typing import Any, TypeVar
 
-from numpy.typing import ArrayLike
+from numpy.typing import NDArray
 
-T_Obs = TypeVar('T_Obs', bound=ArrayLike)
-T_Action = TypeVar('T_Action')
+T_Obs = TypeVar('T_Obs', bound=NDArray[Any])
+T_Action = TypeVar('T_Action', bound=NDArray[Any])

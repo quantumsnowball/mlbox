@@ -31,7 +31,7 @@ N_FEATURE = 30
 MODEL_NAME = 'model.pth'
 
 Obs = npt.NDArray[np.float32]
-Action = np.int64
+Action = npt.NDArray[np.int64]
 Reward = np.float32
 
 

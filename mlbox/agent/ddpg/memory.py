@@ -22,7 +22,7 @@ class Experience(Generic[T_Obs,
 
     def __post_init__(self) -> None:
         # post processing
-        self.action = np.float32(self.action)
+        self.action = self.action.astype(np.float32)
         self.reward = np.float32(self.reward)
 
 

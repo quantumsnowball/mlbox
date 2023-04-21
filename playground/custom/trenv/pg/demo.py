@@ -31,7 +31,7 @@ N_FEATURE = 150
 MODEL_NAME = 'model.pth'
 
 Obs = npt.NDArray[np.float32]
-Action = np.int64
+Action = npt.NDArray[np.int64]
 Reward = np.float32
 
 
@@ -141,7 +141,7 @@ def agent_step(my: Context[OhlcvWindow]):
         # observe
         obs = observe(my)
         # take action
-        action = agent.exploit(obs)
+        action = agent.decide(obs)
         delta_weight, target_weight = act(my, action)
         # mark
         # my.mark['pnlr-raw'] = pnl_ratio(win)[-1]
