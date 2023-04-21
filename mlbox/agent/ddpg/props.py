@@ -24,9 +24,10 @@ class DDPGProps(Generic[T_Obs, T_Action]):
         self._env = env
         assert isinstance(self.env.observation_space, Box)
         assert isinstance(self.env.action_space, Box)
-        self.action_space = self.env.action_space
-        self.obs_dim = self.env.observation_space.shape[0]
-        self.action_dim = self.env.action_space.shape[0]
+        self.observation_space: Box = self.env.observation_space
+        self.action_space: Box = self.env.action_space
+        self.obs_dim = self.observation_space.shape[0]
+        self.action_dim = self.action_space.shape[0]
         self.min_action = self.action_space.low
         self.max_action = self.action_space.high
 
