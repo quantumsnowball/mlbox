@@ -52,7 +52,7 @@ class AgentProps(ABC, Generic[T_Obs, T_Action]):
         ...
 
 
-class Agent(ABC, Generic[T_Obs, T_Action]):
+class Agent(AgentProps[T_Obs, T_Action]):
     '''
     Define the interface of an Agent
     '''
