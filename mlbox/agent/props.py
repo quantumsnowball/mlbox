@@ -4,24 +4,15 @@ from gymnasium import Env
 from torch.nn import Module
 from torch.utils.tensorboard.writer import SummaryWriter
 
+from mlbox.agent import AgentProps
 from mlbox.types import T_Action, T_Obs
 from mlbox.utils.wrapper import assured
 
 
-class BasicAgentProps(Generic[T_Obs, T_Action]):
+class BasicAgentProps(AgentProps[T_Obs, T_Action]):
     #
     # env
     #
-
-    @property
-    @assured
-    def env(self) -> Env[T_Obs, T_Action]:
-        ''' a gym.Env compatible object '''
-        return self._env
-
-    @env.setter
-    def env(self, env: Env[T_Obs, T_Action]) -> None:
-        self._env = env
 
     @property
     @assured
