@@ -22,11 +22,11 @@ from mlbox.utils import crop, pnl_ratio
 SYMBOL = 'BTC-USD'
 SYMBOLS = (SYMBOL, )
 # train
-START = '2017-01-01'
-END = '2019-12-31'
+# START = '2016-01-01'
+# END = '2019-12-31'
 # test
-# START = '2020-01-01'
-# END = '2023-04-20'
+START = '2020-01-01'
+END = '2023-04-20'
 LENGTH = 200
 INTERVAL = 5
 STEP = 0.2
@@ -35,7 +35,7 @@ N_FEATURE = 150
 MODEL_NAME = 'model.pth'
 
 Obs = npt.NDArray[np.float32]
-Action = npt.NDArray[np.float32]
+Action = np.float32
 Reward = np.float32
 
 
@@ -108,13 +108,13 @@ class MyAgent(DDPGAgent[Obs, Action]):
     device = T.device('cuda')
     max_step = 500
     n_eps = 5000
-    n_epoch = 2
+    n_epoch = 5
     replay_size = 100*max_step
     batch_size = 256
     update_target_every = 10
     print_hash_every = 5
     rolling_reward_ma = 20
-    report_progress_every = 25
+    report_progress_every = 50
     render_every = 500
     mean_reward_display_format = '+.6%'
     tensorboard = False
@@ -124,16 +124,22 @@ class MyAgent(DDPGAgent[Obs, Action]):
         super().__init__()
         self.env = MyEnv()
         self.render_env = self.env
+        assert isinstance(self.env.observation_space, Box)
+        assert isinstance(self.env.action_space, Box)
+        obs_dim = self.env.observation_space.shape[0]
+        action_dim = self.env.action_space.shape[0]
+        high = self.env.action_space.high
+        low = self.env.action_space.low
         self.min_noise = 0.2
-        self.max_noise = self.max_action * 1.0
-        self.actor_net = DDPGActorNet(self.obs_dim, self.action_dim,
-                                      min_action=self.min_action,
-                                      max_action=self.max_action).to(self.device)
-        self.actor_net_target = DDPGActorNet(self.obs_dim, self.action_dim,
-                                             min_action=self.min_action,
-                                             max_action=self.max_action).to(self.device)
-        self.critic_net = DDPGCriticNet(self.obs_dim, self.action_dim).to(self.device)
-        self.critic_net_target = DDPGCriticNet(self.obs_dim, self.action_dim).to(self.device)
+        self.max_noise = high * 1.0
+        self.actor_net = DDPGActorNet(obs_dim, action_dim,
+                                      min_action=low,
+                                      max_action=high).to(self.device)
+        self.actor_net_target = DDPGActorNet(obs_dim, action_dim,
+                                             min_action=low,
+                                             max_action=high).to(self.device)
+        self.critic_net = DDPGCriticNet(obs_dim, action_dim).to(self.device)
+        self.critic_net_target = DDPGCriticNet(obs_dim, action_dim).to(self.device)
         # self.actor_net = LSTM_DDPGActorNet(obs_dim, action_dim,
         #                                    min_action=low,
         #                                    max_action=high).to(self.device)
