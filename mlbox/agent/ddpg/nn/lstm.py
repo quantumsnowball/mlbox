@@ -53,7 +53,7 @@ class LSTM_DDPGActorNet(Module):
             Linear(hidden_dim, out_dim),
         )
 
-    def forward(self, obs: Tensor):
+    def forward(self, obs: Tensor) -> Tensor:
         x = obs.unsqueeze(-2)
         x = self.conv1d(x)
         x = x.transpose(-2, -1)
@@ -111,10 +111,10 @@ class LSTM_DDPGCriticNet(Module):
             Linear(hidden_dim, 1),
         )
 
-    def forward(self, obs: Tensor, action: Tensor):
+    def forward(self, obs: Tensor, action: Tensor) -> Tensor:
         lstm_out, _ = self.lstm(obs.unsqueeze(-1))
         obs_net_out = self.obs_net(lstm_out.flatten(-2))
         action_net_out = self.action_net(action)
         common_in = T.relu(T.cat([obs_net_out, action_net_out], dim=-1))
-        q = self.common_net(common_in)
+        q: Tensor = self.common_net(common_in)
         return q

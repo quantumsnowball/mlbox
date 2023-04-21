@@ -122,7 +122,7 @@ class DQNAgent(DQNProps[T_Obs, T_Action],
         with torch.no_grad():
             obs_tensor = torch.tensor(obs, device=self.device)
             best_value_action = torch.argmax(self.policy(obs_tensor))
-            result = best_value_action.cpu().numpy()
+            result: T_Action = best_value_action.cpu().numpy()
             return result
 
     @override

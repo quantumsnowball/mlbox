@@ -127,15 +127,16 @@ class DDPGAgent(DDPGProps[T_Obs, T_Action],
             action = action.cpu().numpy()
             std = self.min_noise + (1-progress)*(self.max_noise-self.min_noise)
             noise = np.random.normal(0, std, action.shape)
-            action_with_noise = np.clip(action + noise, self.min_action, self.max_action)
+            action_with_noise: T_Action = np.clip(action + noise, self.min_action, self.max_action)
             return action_with_noise
 
     @override
     def decide(self, obs: T_Obs) -> T_Action:
         with torch.no_grad():
             obs_tensor = torch.tensor(obs, device=self.device)
-            action = self.actor_net(obs_tensor)
-            return action.cpu().numpy()
+            action_tensor: Tensor = self.actor_net(obs_tensor)
+            action: T_Action = action_tensor.cpu().numpy()
+            return action
 
     #
     # I/O
@@ -177,7 +178,7 @@ class DDPGAgent(DDPGProps[T_Obs, T_Action],
                 self.actor_net = actor_net
                 self.critic_net = critic_net
 
-            def forward(self, obs: Tensor):
+            def forward(self, obs: Tensor) -> tuple[Tensor, Tensor]:
                 action = self.actor_net(obs)
                 value = self.critic_net(obs, action)
                 return action, value

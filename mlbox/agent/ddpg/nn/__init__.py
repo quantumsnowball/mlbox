@@ -35,8 +35,8 @@ class DDPGActorNet(Module):
         self.min_action = Parameter(tensor(min_action), requires_grad=False)
         self.max_action = Parameter(tensor(max_action), requires_grad=False)
 
-    def forward(self, obs: Tensor):
-        x = self.net(obs)
+    def forward(self, obs: Tensor) -> Tensor:
+        x: Tensor = self.net(obs)
         x = F.sigmoid(x) * (self.max_action - self.min_action) + self.min_action
         return x
 
@@ -79,9 +79,9 @@ class DDPGCriticNet(Module):
             Linear(hidden_dim, 1),
         )
 
-    def forward(self, obs: Tensor, action: Tensor):
+    def forward(self, obs: Tensor, action: Tensor) -> Tensor:
         obs_net_out = self.obs_net(obs)
         action_net_out = self.action_net(action)
         common_in = T.relu(T.cat([obs_net_out, action_net_out], dim=-1))
-        q = self.common_net(common_in)
+        q: Tensor = self.common_net(common_in)
         return q

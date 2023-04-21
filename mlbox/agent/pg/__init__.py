@@ -113,7 +113,7 @@ class PGAgent(PGProps[T_Obs, T_Action],
         with torch.no_grad():
             obs_tensor = tensor(obs, device=self.device)
             policy = self.policy_net(obs_tensor)
-            action = policy.sample().cpu().numpy()
+            action: T_Action = policy.sample().cpu().numpy()
             return action
 
     #

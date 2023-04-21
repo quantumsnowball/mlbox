@@ -30,7 +30,7 @@ class PolicyNet(Module):
         # dist
         self.dist = Categorical
 
-    def forward(self, obs: Tensor):
+    def forward(self, obs: Tensor) -> Categorical:
         logits = self.net(obs)
         policy = self.dist(logits=logits)
         return policy
@@ -58,6 +58,6 @@ class BaselineNet(Module):
             Linear(hidden_dim, out_dim),
         )
 
-    def forward(self, obs: Tensor):
-        value = self.net(obs)
+    def forward(self, obs: Tensor) -> Tensor:
+        value: Tensor = self.net(obs)
         return value

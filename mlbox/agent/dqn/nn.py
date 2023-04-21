@@ -28,5 +28,6 @@ class DQNNet(Module):
             Linear(hidden_dim, out_dim),
         )
 
-    def forward(self, obs: Tensor):
-        return self.net(obs)
+    def forward(self, obs: Tensor) -> Tensor:
+        value: Tensor = self.net(obs)
+        return value

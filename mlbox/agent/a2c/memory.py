@@ -21,6 +21,9 @@ class Experience(Generic[T_Obs,
     terminated: bool
 
 
+ExperiencesTuple = tuple[Tensor, Tensor, Tensor, Tensor, Tensor, ]
+
+
 @dataclass
 class Experiences:
     obs: Tensor
@@ -30,12 +33,13 @@ class Experiences:
     terminated: Tensor
 
     @property
-    def tuple(self) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, ]:
-        return astuple(self)
+    def tuple(self) -> ExperiencesTuple:
+        exp_tuple: ExperiencesTuple = astuple(self)
+        return exp_tuple
 
 
 class Buffer(Generic[T_Obs, T_Action]):
-    def __init__(self):
+    def __init__(self) -> None:
         self._cached = deque[Experience[T_Obs,
                                         T_Action]]()
         self._memory = deque[Experience[T_Obs,

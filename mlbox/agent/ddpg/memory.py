@@ -26,6 +26,9 @@ class Experience(Generic[T_Obs,
         self.reward = np.float32(self.reward)
 
 
+BatchTuple = tuple[Tensor, Tensor, Tensor, Tensor, Tensor, ]
+
+
 @dataclass
 class Batch:
     obs: Tensor
@@ -35,8 +38,9 @@ class Batch:
     terminated: Tensor
 
     @property
-    def tuple(self) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, ]:
-        return astuple(self)
+    def tuple(self) -> BatchTuple:
+        batch_tuple: BatchTuple = astuple(self)
+        return batch_tuple
 
 
 class Replay(Dataset[Experience[T_Obs, T_Action]],

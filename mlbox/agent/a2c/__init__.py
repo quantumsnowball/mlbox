@@ -98,7 +98,7 @@ class A2CAgent(A2CProps[T_Obs, T_Action],
         with torch.no_grad():
             obs_tensor = torch.tensor(obs, device=self.device)
             policy, _ = self.actor_critic_net(obs_tensor)
-            action = policy.sample().cpu().numpy()
+            action: T_Action = policy.sample().cpu().numpy()
             return action
 
     #

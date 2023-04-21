@@ -43,11 +43,11 @@ class ActorCriticDiscrete(nn.Module):
             nn.Linear(hidden_dim, 1),
         )
 
-    def forward(self, obs: Tensor):
+    def forward(self, obs: Tensor) -> tuple[Categorical, Tensor]:
         base_out = self.base(obs)
         logits = self.actor(base_out)
         policy = self.dist(logits=logits)
-        value = self.critic(base_out)
+        value: Tensor = self.critic(base_out)
         return policy, value
 
 
@@ -104,10 +104,10 @@ class ActorCriticContinuous(nn.Module):
         # const
         self.mu_scale = mu_scale
 
-    def forward(self, obs: Tensor):
+    def forward(self, obs: Tensor) -> tuple[Normal, Tensor]:
         base_out = self.base(obs)
         mu = self.mu(base_out) * self.mu_scale
         sigma = self.sigma(base_out)
         policy = self.dist(mu, sigma)
-        value = self.critic(base_out)
+        value: Tensor = self.critic(base_out)
         return policy, value
