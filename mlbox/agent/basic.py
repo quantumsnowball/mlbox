@@ -73,7 +73,7 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
     def reset_rolling_reward(self) -> None:
         self.rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
         self.vald_rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
-        self.vald_reward_high: float | None = None
+        self.vald_score_high: float | None = None
 
     #
     # progress report
@@ -99,19 +99,20 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
             # count
             print(f' | Episode {i:>4d}', end='')
             # train
-            train_reward = self.play()
-            self.rolling_reward.append(train_reward)
-            print(f' | train: {mean(self.rolling_reward):{self.mean_reward_display_format}}', end='')
+            self.rolling_reward.append(self.play())
+            train_score = mean(self.rolling_reward)
+            print(f' | train: {train_score:{self.mean_reward_display_format}}', end='')
             # validation
-            vald_reward = self.play(env=self.vald_env)
-            self.vald_rolling_reward.append(vald_reward)
-            print(f' | vald: {mean(self.vald_rolling_reward):{self.mean_reward_display_format}}', end='')
+            self.vald_rolling_reward.append(self.play(env=self.vald_env))
+            vald_score = mean(self.vald_rolling_reward)
+            print(f' | vald: {vald_score:{self.mean_reward_display_format}}', end='')
             # save best model
-            if self.auto_save_best_model and (self.vald_reward_high is None or
-                                              vald_reward > self.vald_reward_high):
+            if (self.auto_save_best_model
+                    and len(self.vald_rolling_reward) >= self.rolling_reward_ma
+                    and (self.vald_score_high is None or vald_score > self.vald_score_high)):
                 self.save(self.script_basedir / self.auto_save_filename)
                 print(f' [saved]', end='')
-                self.vald_reward_high = vald_reward
+                self.vald_score_high = vald_score
             # newline
             print('')
 
