@@ -1,3 +1,5 @@
+import sys
+from pathlib import Path
 from typing import Generic
 
 from gymnasium import Env
@@ -43,3 +45,13 @@ class BasicAgentProps(Generic[T_Obs, T_Action]):
     @writer.setter
     def writer(self, writer: SummaryWriter) -> None:
         self._writer = writer
+    #
+    # I/O
+    #
+
+    @property
+    def script_basedir(self) -> Path:
+        path = Path().cwd() / Path(sys.argv[0])
+        assert path.is_file()
+        basedir = Path(path).parent.relative_to(Path.cwd())
+        return basedir
