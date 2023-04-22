@@ -72,6 +72,8 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
 
     def reset_rolling_reward(self) -> None:
         self.rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
+        if self.validation:
+            self.vald_rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
 
     #
     # progress report
