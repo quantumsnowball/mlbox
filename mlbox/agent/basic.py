@@ -91,7 +91,7 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
     report_progress_every = 10
     mean_reward_display_format = '+.1f'
 
-    def print_validation_result(self,
+    def print_evaluation_result(self,
                                 i: int,
                                 ) -> None:
         if i % self.report_progress_every == 0:

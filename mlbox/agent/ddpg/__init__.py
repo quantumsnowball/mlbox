@@ -108,7 +108,7 @@ class DDPGAgent(DDPGProps[T_Obs, T_Action],
                     self.update_targets()
                 # report progress
                 self.print_progress_bar(i_eps)
-                self.print_validation_result(i_eps)
+                self.print_evaluation_result(i_eps)
                 self.render_showcase(i_eps)
                 # tensorboard
                 self.log_histogram(i_eps)

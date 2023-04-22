@@ -83,7 +83,7 @@ class A2CAgent(A2CProps[T_Obs, T_Action],
                 self.learn()
                 # report progress
                 self.print_progress_bar(i_eps)
-                self.print_validation_result(i_eps)
+                self.print_evaluation_result(i_eps)
                 self.render_showcase(i_eps)
             except KeyboardInterrupt:
                 print(f'\nManually stopped training loop')
