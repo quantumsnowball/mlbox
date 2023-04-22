@@ -41,6 +41,7 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
     #
 
     max_step = 1000
+    validation = False
 
     @override
     def play(self,
