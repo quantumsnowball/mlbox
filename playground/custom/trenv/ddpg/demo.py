@@ -19,14 +19,18 @@ from mlbox.agent.ddpg.nn.lstm import LSTM_DDPGActorNet, LSTM_DDPGCriticNet
 from mlbox.trenv import TrEnv
 from mlbox.utils import crop, pnl_ratio
 
+# train
+TRAIN_START = '2017-01-01'
+TRAIN_END = '2019-12-31'
+# validation
+VALD_START = '2020-01-01'
+VALD_END = '2021-12-31'
+# test
+TEST_START = '2022-01-01'
+TEST_END = '2023-03-31'
+
 SYMBOL = 'BTC-USD'
 SYMBOLS = (SYMBOL, )
-# train
-START = '2017-01-01'
-END = '2019-12-31'
-# test
-# START = '2020-01-01'
-# END = '2023-04-20'
 LENGTH = 200
 INTERVAL = 5
 STEP = 0.2
@@ -80,8 +84,6 @@ class MyEnv(TrEnv[Obs, Action]):
     Market = YahooHistoricalWindows
     interval = INTERVAL
     symbol = SYMBOL
-    start = START
-    end = END
     length = LENGTH
 
     @override
@@ -101,6 +103,16 @@ class MyEnv(TrEnv[Obs, Action]):
         every(my)
 
 
+class TrainEnv(MyEnv):
+    start = TRAIN_START
+    end = TRAIN_END
+
+
+class ValdEnv(MyEnv):
+    start = VALD_START
+    end = VALD_END
+
+
 #
 # Agent
 #
@@ -115,15 +127,15 @@ class MyAgent(DDPGAgent[Obs, Action]):
     print_hash_every = 5
     rolling_reward_ma = 20
     report_progress_every = 25
-    render_every = 500
+    validation = True
     mean_reward_display_format = '+.6%'
     tensorboard = False
     gamma = 1
 
     def __init__(self) -> None:
         super().__init__()
-        self.env = MyEnv()
-        self.render_env = self.env
+        self.env = TrainEnv()
+        self.vald_env = ValdEnv()
         self.min_noise = 0.2
         self.max_noise = self.max_action * 1.0
         self.actor_net = DDPGActorNet(self.obs_dim, self.action_dim,
@@ -179,7 +191,7 @@ def Env(name: str, do: Hook[OhlcvWindow]) -> Trader:
         strategy=Strategy(name=name)
         .on(SYMBOL, OhlcvWindow, do=do),
         market=YahooHistoricalWindows(
-            symbols=SYMBOLS, start=START, end=END, length=LENGTH),
+            symbols=SYMBOLS, start=TEST_START, end=TEST_END, length=LENGTH),
         broker=PaperEX(SYMBOLS)
     )
 

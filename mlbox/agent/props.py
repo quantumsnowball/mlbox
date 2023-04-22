@@ -22,6 +22,16 @@ class BasicAgentProps(Generic[T_Obs, T_Action]):
     def render_env(self, render_env: Env[T_Obs, T_Action]) -> None:
         self._render_env = render_env
 
+    @property
+    @assured
+    def vald_env(self) -> Env[T_Obs, T_Action]:
+        ''' a gym.Env compatible object for validation '''
+        return self._vald_env
+
+    @vald_env.setter
+    def vald_env(self, vald_env: Env[T_Obs, T_Action]) -> None:
+        self._vald_env = vald_env
+
     #
     # tensorboard
     #

@@ -98,7 +98,7 @@ class PGAgent(PGProps[T_Obs, T_Action],
                 # learn from current batch
                 self.learn()
                 # report progress
-                self.print_validation_result(i_eps)
+                self.print_evaluation_result(i_eps)
                 self.render_showcase(i_eps)
             except KeyboardInterrupt:
                 print(f'\nManually stopped training loop')

@@ -12,7 +12,7 @@ from mlbox.agent.dqn.nn import DQNNet
 ENV = 'CartPole-v1'
 
 Obs = npt.NDArray[np.float32]
-Action = np.int64
+Action = npt.NDArray[np.int64]
 
 
 @pytest.mark.parametrize('run_on', ('cpu', 'cuda'))
@@ -24,6 +24,7 @@ def test_dqn(run_on):
         max_step = 200
         update_target_every = 5
         report_progress_every = 20
+        validation = True
         rolling_reward_ma = 5
         n_eps = 5
         n_epoch = 10
@@ -31,7 +32,7 @@ def test_dqn(run_on):
 
         def __init__(self) -> None:
             super().__init__()
-            self.env = gym.make(ENV)
+            self.env = self.vald_env = gym.make(ENV)
             self.policy = DQNNet(self.obs_dim, self.action_dim,
                                  hidden_dim=32).to(self.device)
             self.target = DQNNet(self.obs_dim, self.action_dim,
