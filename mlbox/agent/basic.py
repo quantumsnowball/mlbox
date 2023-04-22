@@ -1,6 +1,7 @@
 from collections import deque
 from inspect import currentframe
 from pathlib import Path
+from statistics import mean
 from typing import Self
 
 import torch as T
@@ -95,9 +96,16 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
                                 i: int,
                                 ) -> None:
         if i % self.report_progress_every == 0:
+            # count
+            print(f' | Episode {i:>4d}', end='')
+            # train
             self.rolling_reward.append(self.play())
-            mean_reward = sum(self.rolling_reward)/len(self.rolling_reward)
-            print(f' | Episode {i:>4d} | {mean_reward=:{self.mean_reward_display_format}}')
+            print(f' | train: {mean(self.rolling_reward):{self.mean_reward_display_format}}', end='')
+            # validation
+            if self.validation:
+                self.vald_rolling_reward.append(self.play(env=self.vald_env))
+                print(f' | vald: {mean(self.vald_rolling_reward):{self.mean_reward_display_format}}', end='')
+            print('')
 
     render_every: int | None = None
 
