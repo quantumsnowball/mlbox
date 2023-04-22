@@ -73,6 +73,7 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
     def reset_rolling_reward(self) -> None:
         self.rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
         self.vald_rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
+        self.vald_reward_high: float | None = None
 
     #
     # progress report
@@ -96,10 +97,13 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
             # count
             print(f' | Episode {i:>4d}', end='')
             # train
-            self.rolling_reward.append(self.play())
+            train_reward = self.play()
+            self.rolling_reward.append(train_reward)
             print(f' | train: {mean(self.rolling_reward):{self.mean_reward_display_format}}', end='')
             # validation
-            self.vald_rolling_reward.append(self.play(env=self.vald_env))
+            vald_reward = self.play(env=self.vald_env)
+            is_highest = self.vald_reward_high is None or vald_reward > self.vald_reward_high
+            self.vald_rolling_reward.append(vald_reward)
             print(f' | vald: {mean(self.vald_rolling_reward):{self.mean_reward_display_format}}', end='')
             # newline
             print('')
