@@ -145,11 +145,9 @@ class DQNAgent(DQNProps[T_Obs, T_Action],
         path = Path(path)
         self.policy.load_state_dict(torch.load(path))
         self.update_target()
-        print(f'Loaded model: {path}')
 
     @override
     def save(self,
              path: Path | str) -> None:
         path = Path(path)
         torch.save(self.policy.state_dict(), path)
-        print(f'Saved model: {path}')

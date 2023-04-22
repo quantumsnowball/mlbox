@@ -142,11 +142,13 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
             if input(f'Model {path} exists, load? (y/[n]) ').upper() == 'Y':
                 # load agent
                 self.load(path)
+                print(f'Loaded model: {path}')
         if start_training or input(f'Start training the agent? ([y]/n) ').upper() != 'N':
             # train agent
             self.train()
             if input(f'Save model? [y]/n) ').upper() != 'N':
                 self.save(path)
+                print(f'Saved model: {path}')
 
     #
     # tensorboard
