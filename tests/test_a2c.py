@@ -14,7 +14,7 @@ def test_a2c_discrete(run_on):
     env = 'CartPole-v1'
 
     Obs = npt.NDArray[np.float32]
-    Action = np.int64
+    Action = npt.NDArray[np.int64]
 
     class MyAgent(A2CDiscreteAgent[Obs, Action]):
         device = T.device(run_on)
@@ -23,10 +23,11 @@ def test_a2c_discrete(run_on):
         print_hash_every = 10
         rolling_reward_ma = 5
         report_progress_every = 100
+        validation = True
 
         def __init__(self) -> None:
             super().__init__()
-            self.env = gym.make(env)
+            self.env = self.vald_env = gym.make(env)
             self.actor_critic_net = ActorCriticDiscrete(self.obs_dim, self.action_dim).to(self.device)
             self.optimizer = optim.Adam(self.actor_critic_net.parameters(),
                                         lr=1e-2)

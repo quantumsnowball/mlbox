@@ -28,13 +28,14 @@ def test_ddpg(run_on):
         print_hash_every = 5
         rolling_reward_ma = 20
         report_progress_every = 50
+        validation = True
         render_every = 1000
         min_noise = 0.5
         max_noise = 3.0
 
         def __init__(self) -> None:
             super().__init__()
-            self.env = gym.make(ENV)
+            self.env = self.vald_env = gym.make(ENV)
             self.render_env = gym.make(ENV, render_mode='human')
             self.actor_net = DDPGActorNet(self.obs_dim, self.action_dim,
                                           min_action=-2,

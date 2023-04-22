@@ -13,7 +13,7 @@ from mlbox.agent.pg.nn import BaselineNet, PolicyNet
 ENV = 'CartPole-v1'
 
 Obs = npt.NDArray[np.float32]
-Action = np.int64
+Action = npt.NDArray[np.int64]
 
 
 @pytest.mark.parametrize('run_on', ('cpu', 'cuda'))
@@ -25,13 +25,14 @@ def test_pg(run_on):
         batch_size = 30
         print_hash_every = 10
         report_progress_every = 5
+        validation = True
         # variant
         reward_to_go = False
         baseline = True
 
         def __init__(self) -> None:
             super().__init__()
-            self.env = gym.make(ENV)
+            self.env = self.vald_env = gym.make(ENV)
             self.policy_net = PolicyNet(self.obs_dim, self.action_dim,
                                         hidden_dim=32,
                                         Activation=Tanh).to(self.device)
