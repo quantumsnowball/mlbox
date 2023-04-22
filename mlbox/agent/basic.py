@@ -42,7 +42,6 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
     #
 
     max_step = 1000
-    validation = False
 
     @override
     def play(self,
@@ -73,8 +72,7 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
 
     def reset_rolling_reward(self) -> None:
         self.rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
-        if self.validation:
-            self.vald_rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
+        self.vald_rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
 
     #
     # progress report
@@ -93,8 +91,7 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
     mean_reward_display_format = '+.1f'
 
     def print_evaluation_result(self,
-                                i: int,
-                                ) -> None:
+                                i: int) -> None:
         if i % self.report_progress_every == 0:
             # count
             print(f' | Episode {i:>4d}', end='')
@@ -102,9 +99,9 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
             self.rolling_reward.append(self.play())
             print(f' | train: {mean(self.rolling_reward):{self.mean_reward_display_format}}', end='')
             # validation
-            if self.validation:
-                self.vald_rolling_reward.append(self.play(env=self.vald_env))
-                print(f' | vald: {mean(self.vald_rolling_reward):{self.mean_reward_display_format}}', end='')
+            self.vald_rolling_reward.append(self.play(env=self.vald_env))
+            print(f' | vald: {mean(self.vald_rolling_reward):{self.mean_reward_display_format}}', end='')
+            # newline
             print('')
 
     render_every: int | None = None
