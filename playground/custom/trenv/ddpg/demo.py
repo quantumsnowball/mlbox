@@ -127,7 +127,7 @@ class MyAgent(DDPGAgent[Obs, Action]):
     print_hash_every = 5
     rolling_reward_ma = 20
     report_progress_every = 25
-    validation = True
+    auto_save = True
     mean_reward_display_format = '+.6%'
     tensorboard = False
     gamma = 1
