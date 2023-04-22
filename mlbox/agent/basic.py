@@ -90,8 +90,9 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
 
     report_progress_every = 10
     mean_reward_display_format = '+.1f'
-    auto_save_best_model = False
+    auto_save = False
     auto_save_filename = 'model.pth'
+    auto_save_start_eps = 3
 
     def print_evaluation_result(self,
                                 i: int) -> None:
@@ -107,8 +108,8 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
             vald_score = mean(self.vald_rolling_reward)
             print(f' | vald: {vald_score:{self.mean_reward_display_format}}', end='')
             # save best model
-            if (self.auto_save_best_model
-                    and len(self.vald_rolling_reward) >= self.rolling_reward_ma
+            if (self.auto_save
+                    and len(self.vald_rolling_reward) >= self.auto_save_start_eps
                     and (self.vald_score_high is None or vald_score > self.vald_score_high)):
                 self.save(self.script_basedir / self.auto_save_filename)
                 print(f' [saved]', end='')
