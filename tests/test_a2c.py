@@ -5,7 +5,8 @@ import pytest
 import torch as T
 import torch.optim as optim
 
-from mlbox.agent.a2c import A2CContinuousAgent, A2CDiscreteAgent
+from mlbox.agent.a2c.continuous import A2CContinuousAgent
+from mlbox.agent.a2c.discrete import A2CDiscreteAgent
 from mlbox.agent.a2c.nn import ActorCriticContinuous, ActorCriticDiscrete
 
 

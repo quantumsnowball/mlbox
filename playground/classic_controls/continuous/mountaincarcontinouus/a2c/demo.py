@@ -3,9 +3,8 @@ import numpy as np
 import numpy.typing as npt
 import torch as T
 import torch.optim as optim
-from gymnasium.spaces import Box
 
-from mlbox.agent.a2c import A2CContinuousAgent
+from mlbox.agent.a2c.continuous import A2CContinuousAgent
 from mlbox.agent.a2c.nn import ActorCriticContinuous
 
 ENV = 'MountainCarContinuous-v0'

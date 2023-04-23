@@ -4,7 +4,7 @@ import numpy.typing as npt
 import torch as T
 import torch.optim as optim
 
-from mlbox.agent.a2c import A2CDiscreteAgent
+from mlbox.agent.a2c.discrete import A2CDiscreteAgent
 from mlbox.agent.a2c.nn import ActorCriticDiscrete
 
 ENV = 'LunarLander-v2'
