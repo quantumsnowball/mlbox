@@ -7,7 +7,7 @@ from typing_extensions import override
 from mlbox.agent.a2c.memory import Buffer
 from mlbox.agent.a2c.props import (A2CContinuousProps, A2CDiscreteProps,
                                    A2CProps)
-from mlbox.agent.basic import BasicAgent
+from mlbox.agent import BasicAgent
 from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
 

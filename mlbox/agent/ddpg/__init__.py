@@ -7,7 +7,7 @@ from torch import Tensor, tensor
 from torch.nn import Module
 from typing_extensions import override
 
-from mlbox.agent.basic import BasicAgent
+from mlbox.agent import BasicAgent
 from mlbox.agent.ddpg.memory import CachedReplay
 from mlbox.agent.ddpg.props import DDPGProps
 from mlbox.events import TerminatedError

@@ -5,7 +5,7 @@ import torch
 from torch.nn.utils.clip_grad import clip_grad_norm_
 from typing_extensions import override
 
-from mlbox.agent.basic import BasicAgent
+from mlbox.agent import BasicAgent
 from mlbox.agent.dqn.memory import CachedReplay
 from mlbox.agent.dqn.props import DQNProps
 from mlbox.events import TerminatedError

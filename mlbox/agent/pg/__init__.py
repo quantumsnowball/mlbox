@@ -6,7 +6,7 @@ from torch import tensor
 from torch.nn import MSELoss
 from typing_extensions import override
 
-from mlbox.agent.basic import BasicAgent
+from mlbox.agent import BasicAgent
 from mlbox.agent.pg.memory import Buffer
 from mlbox.agent.pg.props import PGProps
 from mlbox.events import TerminatedError
