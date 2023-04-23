@@ -149,7 +149,6 @@ class DDPGAgent(DDPGProps[T_Obs, T_Action],
         state = torch.load(path)
         self.actor_net.load_state_dict(state['actor'])
         self.critic_net.load_state_dict(state['critic'])
-        print(f'Loaded model: {path}')
 
     @override
     def save(self,
@@ -158,7 +157,6 @@ class DDPGAgent(DDPGProps[T_Obs, T_Action],
         state = dict(actor=self.actor_net.state_dict(),
                      critic=self.critic_net.state_dict())
         torch.save(state, path)
-        print(f'Saved model: {path}')
 
     #
     # tensorboard

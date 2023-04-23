@@ -124,11 +124,9 @@ class PGAgent(PGProps[T_Obs, T_Action],
              path: Path | str) -> None:
         path = Path(path)
         self.policy_net.load_state_dict(torch.load(path))
-        print(f'Loaded model: {path}')
 
     @override
     def save(self,
              path: Path | str) -> None:
         path = Path(path)
         torch.save(self.policy_net.state_dict(), path)
-        print(f'Saved model: {path}')

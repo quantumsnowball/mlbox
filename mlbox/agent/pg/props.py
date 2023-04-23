@@ -1,15 +1,14 @@
-from typing import Generic
-
 from gymnasium import Env
 from gymnasium.spaces import Box, Discrete
 from torch.nn import Module
 from torch.optim import Optimizer
 
+from mlbox.agent import Agent
 from mlbox.types import T_Action, T_Obs
 from mlbox.utils.wrapper import assured
 
 
-class PGProps(Generic[T_Obs, T_Action]):
+class PGProps(Agent[T_Obs, T_Action]):
     #
     # env
     #

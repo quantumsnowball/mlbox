@@ -110,14 +110,12 @@ class A2CAgent(A2CProps[T_Obs, T_Action],
              path: Path | str) -> None:
         path = Path(path)
         self.actor_critic_net.load_state_dict(torch.load(path))
-        print(f'Loaded model: {path}')
 
     @override
     def save(self,
              path: Path | str) -> None:
         path = Path(path)
         torch.save(self.actor_critic_net.state_dict(), path)
-        print(f'Saved model: {path}')
 
 
 class A2CDiscreteAgent(A2CDiscreteProps[T_Obs, T_Action],

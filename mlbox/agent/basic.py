@@ -42,7 +42,6 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
     #
 
     max_step = 1000
-    validation = False
 
     @override
     def play(self,
@@ -73,8 +72,8 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
 
     def reset_rolling_reward(self) -> None:
         self.rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
-        if self.validation:
-            self.vald_rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
+        self.vald_rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
+        self.vald_score_high: float | None = None
 
     #
     # progress report
@@ -91,20 +90,31 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
 
     report_progress_every = 10
     mean_reward_display_format = '+.1f'
+    auto_save = False
+    auto_save_filename = 'model.pth'
+    auto_save_start_eps = 3
 
     def print_evaluation_result(self,
-                                i: int,
-                                ) -> None:
+                                i: int) -> None:
         if i % self.report_progress_every == 0:
             # count
             print(f' | Episode {i:>4d}', end='')
             # train
             self.rolling_reward.append(self.play())
-            print(f' | train: {mean(self.rolling_reward):{self.mean_reward_display_format}}', end='')
+            train_score = mean(self.rolling_reward)
+            print(f' | train: {train_score:{self.mean_reward_display_format}}', end='')
             # validation
-            if self.validation:
-                self.vald_rolling_reward.append(self.play(env=self.vald_env))
-                print(f' | vald: {mean(self.vald_rolling_reward):{self.mean_reward_display_format}}', end='')
+            self.vald_rolling_reward.append(self.play(env=self.vald_env))
+            vald_score = mean(self.vald_rolling_reward)
+            print(f' | vald: {vald_score:{self.mean_reward_display_format}}', end='')
+            # save best model
+            if (self.auto_save
+                    and len(self.vald_rolling_reward) >= self.auto_save_start_eps
+                    and (self.vald_score_high is None or vald_score > self.vald_score_high)):
+                self.save(self.script_basedir / self.auto_save_filename)
+                print(f' [saved]', end='')
+                self.vald_score_high = vald_score
+            # newline
             print('')
 
     render_every: int | None = None
@@ -134,11 +144,13 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
             if input(f'Model {path} exists, load? (y/[n]) ').upper() == 'Y':
                 # load agent
                 self.load(path)
+                print(f'Loaded model: {path}')
         if start_training or input(f'Start training the agent? ([y]/n) ').upper() != 'N':
             # train agent
             self.train()
-            if input(f'Save model? [y]/n) ').upper() != 'N':
+            if input(f'Save model? y/[n]) ').upper() == 'Y':
                 self.save(path)
+                print(f'Saved model: {path}')
 
     #
     # tensorboard
