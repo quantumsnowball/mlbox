@@ -16,7 +16,7 @@ from typing_extensions import override
 
 from mlbox.agent.dqn import DQNAgent
 from mlbox.agent.dqn.nn import DQNNet
-from mlbox.trenv import TrEnv
+from mlbox.trenv import BasicTrEnv
 from mlbox.utils import crop
 
 SYMBOL = 'BTC-USD'
@@ -69,7 +69,7 @@ def every(my: Context[OhlcvWindow]) -> None:
 #
 # Env
 #
-class MyEnv(TrEnv[Obs, Action]):
+class MyEnv(BasicTrEnv[Obs, Action]):
     # Env
     observation_space: Box = Box(low=0, high=1, shape=(N_FEATURE, ), )
     action_space: Discrete = Discrete(3)

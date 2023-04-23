@@ -30,5 +30,6 @@ class Routine(ABC, Generic[T_Obs, T_Action]):
         pass
 
     @property
+    @abstractmethod
     def do(self) -> Hook[OhlcvWindow]:
         ...
