@@ -25,6 +25,17 @@ class Environment(ABC, Generic[T_Obs, T_Action]):
 
     @property
     @abstractmethod
+    def vald_env(self) -> Env[T_Obs, T_Action]:
+        ''' a gym.Env compatible object for validation '''
+        ...
+
+    @vald_env.setter
+    @abstractmethod
+    def vald_env(self, vald_env: Env[T_Obs, T_Action]) -> None:
+        ...
+
+    @property
+    @abstractmethod
     def render_env(self) -> Env[T_Obs, T_Action]:
         ''' a gym.Env compatible object for human render mode'''
         ...
