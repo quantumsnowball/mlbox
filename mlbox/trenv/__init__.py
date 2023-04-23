@@ -1,32 +1,22 @@
-from abc import ABC, abstractmethod
 from threading import Event, Thread
 from typing import Any, Self, SupportsFloat
 
-from gymnasium import Env
-from pandas import Timestamp
 from trbox.broker.paper import PaperEX
 from trbox.common.logger import Log
-from trbox.common.types import Symbol
 from trbox.event.market import OhlcvWindow
-from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
 from trbox.strategy.context import Context
 from trbox.strategy.types import Hook
 from trbox.trader import Trader
+from typing_extensions import override
 
 from mlbox.events import TerminatedError
+from mlbox.interface.trenv import TrEnv
 from mlbox.trenv.queue import TrEnvQueue
 from mlbox.trenv.strategy import TrEnvStrategy
 from mlbox.types import T_Action, T_Obs
 
 
-class TrEnv(Env[T_Obs, T_Action], ABC):
-    Market: type[YahooHistoricalWindows]
-    interval: int
-    symbol: Symbol
-    start: Timestamp | str
-    end: Timestamp | str
-    length: int
-
+class BasicTrEnv(TrEnv[T_Obs, T_Action]):
     def __new__(cls) -> Self:
         try:
             # ensure attrs are implemented in subclass instance
@@ -50,25 +40,19 @@ class TrEnv(Env[T_Obs, T_Action], ABC):
         self._ready = Event()
         self._trader: Trader
 
-    @abstractmethod
-    def observe(self, my: Context[OhlcvWindow]) -> T_Obs:
-        ...
-
-    @abstractmethod
-    def act(self, my: Context[OhlcvWindow], action: T_Action) -> None:
-        ...
-
-    @abstractmethod
-    def grant(self, my: Context[OhlcvWindow]) -> SupportsFloat:
-        ...
-
-    def every(self, _: Context[OhlcvWindow]) -> None:
-        pass
-
+    #
+    # routine
+    #
+    @override
     def beginning(self, _: Context[OhlcvWindow]) -> None:
         pass
 
+    @override
+    def every(self, _: Context[OhlcvWindow]) -> None:
+        pass
+
     @property
+    @override
     def do(self) -> Hook[OhlcvWindow]:
         def do(my: Context[OhlcvWindow]) -> None:
             self.every(my)
@@ -96,7 +80,7 @@ class TrEnv(Env[T_Obs, T_Action], ABC):
     #
     # gym.Env
     #
-
+    @override
     def make(self) -> Trader:
         return Trader(
             strategy=TrEnvStrategy[T_Obs, T_Action](name='TrEnv', trenv=self)
@@ -109,6 +93,7 @@ class TrEnv(Env[T_Obs, T_Action], ABC):
             broker=PaperEX((self.symbol,))
         )
 
+    @override
     def reset(self,
               *,
               seed: int | None = None,
@@ -138,6 +123,7 @@ class TrEnv(Env[T_Obs, T_Action], ABC):
         # return
         return obs, {}
 
+    @override
     def step(self,
              action: T_Action) -> tuple[T_Obs,
                                         SupportsFloat,

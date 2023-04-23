@@ -9,7 +9,7 @@ from trbox.strategy import Strategy
 from mlbox.events import Terminated
 
 if TYPE_CHECKING:
-    from mlbox.trenv import TrEnv
+    from mlbox.trenv import BasicTrEnv
 
 from mlbox.types import T_Action, T_Obs
 
@@ -17,7 +17,7 @@ from mlbox.types import T_Action, T_Obs
 class TrEnvStrategy(Strategy, Generic[T_Obs, T_Action]):
     def __init__(self,
                  *args: Any,
-                 trenv: TrEnv[T_Obs, T_Action],
+                 trenv: BasicTrEnv[T_Obs, T_Action],
                  **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.trenv = trenv
