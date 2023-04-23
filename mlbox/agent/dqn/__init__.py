@@ -7,13 +7,13 @@ from typing_extensions import override
 
 from mlbox.agent import BasicAgent
 from mlbox.agent.dqn.memory import CachedReplay
-from mlbox.agent.dqn.props import DQNProps
+from mlbox.agent.dqn.props import Props
 from mlbox.events import TerminatedError
 from mlbox.interface.agent.mixins import EpsilonGreedyStrategy
 from mlbox.types import T_Action, T_Obs
 
 
-class DQNAgent(DQNProps[T_Obs, T_Action],
+class DQNAgent(Props[T_Obs, T_Action],
                EpsilonGreedyStrategy[T_Obs, T_Action],
                BasicAgent[T_Obs, T_Action]):
     # replay memory

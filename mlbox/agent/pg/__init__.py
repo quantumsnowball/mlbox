@@ -8,12 +8,12 @@ from typing_extensions import override
 
 from mlbox.agent import BasicAgent
 from mlbox.agent.pg.memory import Buffer
-from mlbox.agent.pg.props import PGProps
+from mlbox.agent.pg.props import Props
 from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
 
 
-class PGAgent(PGProps[T_Obs, T_Action],
+class PGAgent(Props[T_Obs, T_Action],
               BasicAgent[T_Obs, T_Action]):
     reward_to_go = False
     baseline = False

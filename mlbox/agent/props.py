@@ -10,7 +10,7 @@ from mlbox.types import T_Action, T_Obs
 from mlbox.utils.wrapper import assured
 
 
-class BasicAgentProps(Agent[T_Obs, T_Action]):
+class Props(Agent[T_Obs, T_Action]):
     #
     # env
     #
