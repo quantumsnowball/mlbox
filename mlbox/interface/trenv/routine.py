@@ -3,6 +3,7 @@ from typing import Generic, SupportsFloat
 
 from trbox.event.market import OhlcvWindow
 from trbox.strategy.context import Context
+from trbox.strategy.types import Hook
 
 from mlbox.types import T_Action, T_Obs
 
@@ -27,3 +28,7 @@ class Routine(ABC, Generic[T_Obs, T_Action]):
     @abstractmethod
     def beginning(self, _: Context[OhlcvWindow]) -> None:
         pass
+
+    @property
+    def do(self) -> Hook[OhlcvWindow]:
+        ...
