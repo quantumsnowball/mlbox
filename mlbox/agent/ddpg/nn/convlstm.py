@@ -8,7 +8,7 @@ from torch import Tensor, tensor
 from torch.nn import LSTM, Conv1d, Linear, Module, Parameter, ReLU, Sequential
 
 
-class LSTM_DDPGActorNet(Module):
+class ConvLSTM_DDPGActorNet(Module):
     def __init__(self,
                  in_dim: int,
                  out_dim: int,
@@ -63,7 +63,7 @@ class LSTM_DDPGActorNet(Module):
         return x
 
 
-class LSTM_DDPGCriticNet(Module):
+class ConvLSTM_DDPGCriticNet(Module):
     def __init__(self,
                  obs_dim: int,
                  action_dim: int,
