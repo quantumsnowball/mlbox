@@ -4,7 +4,7 @@ from torch.nn import Module
 from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
 
-from mlbox.agent import Agent
+from mlbox.interface.agent import Agent
 from mlbox.types import T_Action, T_Obs
 from mlbox.utils.wrapper import assured
 
