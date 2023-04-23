@@ -148,7 +148,7 @@ class BasicAgent(BasicAgentProps[T_Obs, T_Action],
         if start_training or input(f'Start training the agent? ([y]/n) ').upper() != 'N':
             # train agent
             self.train()
-            if input(f'Save model? [y]/n) ').upper() != 'N':
+            if input(f'Save model? y/[n]) ').upper() == 'Y':
                 self.save(path)
                 print(f'Saved model: {path}')
 
