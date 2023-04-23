@@ -7,7 +7,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from mlbox.types import T_Action, T_Obs
 
 
-class AgentProps(ABC, Generic[T_Obs, T_Action]):
+class EnvProps(ABC, Generic[T_Obs, T_Action]):
     #
     # env
     #
@@ -36,6 +36,8 @@ class AgentProps(ABC, Generic[T_Obs, T_Action]):
                    render_env: Env[T_Obs, T_Action]) -> None:
         ...
 
+
+class TensorboardProps(ABC, Generic[T_Obs, T_Action]):
     #
     # tensorboard
     #

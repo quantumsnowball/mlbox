@@ -3,11 +3,12 @@ from pathlib import Path
 
 from gymnasium import Env
 
-from mlbox.interface.agent.props import AgentProps
+from mlbox.interface.agent.props import EnvProps, TensorboardProps
 from mlbox.types import T_Action, T_Obs
 
 
-class Agent(AgentProps[T_Obs, T_Action]):
+class Agent(EnvProps[T_Obs, T_Action],
+            TensorboardProps[T_Obs, T_Action]):
     '''
     Define the interface of an Agent
     '''
