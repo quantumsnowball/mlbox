@@ -2,12 +2,11 @@ from abc import ABC, abstractmethod
 from typing import Generic
 
 from gymnasium import Env
-from torch.utils.tensorboard.writer import SummaryWriter
 
 from mlbox.types import T_Action, T_Obs
 
 
-class EnvProps(ABC, Generic[T_Obs, T_Action]):
+class Environment(ABC, Generic[T_Obs, T_Action]):
     #
     # env
     #
@@ -34,20 +33,4 @@ class EnvProps(ABC, Generic[T_Obs, T_Action]):
     @abstractmethod
     def render_env(self,
                    render_env: Env[T_Obs, T_Action]) -> None:
-        ...
-
-
-class TensorboardProps(ABC, Generic[T_Obs, T_Action]):
-    #
-    # tensorboard
-    #
-    @property
-    @abstractmethod
-    def writer(self) -> SummaryWriter:
-        ...
-
-    @writer.setter
-    @abstractmethod
-    def writer(self,
-               writer: SummaryWriter) -> None:
         ...

@@ -1,65 +1,17 @@
-from abc import abstractmethod
-from pathlib import Path
-
-from gymnasium import Env
-
-from mlbox.interface.agent.props import EnvProps, TensorboardProps
+from mlbox.interface.agent.acting import Acting
+from mlbox.interface.agent.env import Environment
+from mlbox.interface.agent.io import IO
+from mlbox.interface.agent.tensorboard import Tensorboard
+from mlbox.interface.agent.training import Training
 from mlbox.types import T_Action, T_Obs
 
 
-class Agent(EnvProps[T_Obs, T_Action],
-            TensorboardProps[T_Obs, T_Action]):
+class Agent(Acting[T_Obs, T_Action],
+            Training[T_Obs, T_Action],
+            IO[T_Obs, T_Action],
+            Environment[T_Obs, T_Action],
+            Tensorboard[T_Obs, T_Action]):
     '''
     Define the interface of an Agent
     '''
-
-    #
-    # acting
-    #
-
-    @abstractmethod
-    def decide(self,
-               obs: T_Obs) -> T_Action:
-        ''' given an observation choose an action '''
-        ...
-
-    #
-    # training
-    #
-
-    @abstractmethod
-    def learn(self) -> None:
-        ''' learn from replay experience '''
-        ...
-
-    @abstractmethod
-    def train(self) -> None:
-        ''' train an agent to learn through all necessary steps '''
-        ...
-
-    @abstractmethod
-    def play(self,
-             max_step: int,
-             *,
-             env: Env[T_Obs, T_Action] | None = None) -> float:
-        ''' agent to play through the env using current policy '''
-        ...
-
-    #
-    # I/O
-    #
-
-    @abstractmethod
-    def load(self,
-             path: Path | str) -> None:
-        ...
-
-    @abstractmethod
-    def save(self,
-             path: Path | str) -> None:
-        ...
-
-    @abstractmethod
-    def prompt(self,
-               name: str) -> None:
-        ...
+    ...
