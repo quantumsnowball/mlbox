@@ -6,12 +6,18 @@ from mlbox.interface.agent.training import Training
 from mlbox.types import T_Action, T_Obs
 
 
-class Agent(Acting[T_Obs, T_Action],
-            Training[T_Obs, T_Action],
-            IO[T_Obs, T_Action],
-            Environment[T_Obs, T_Action],
-            Tensorboard[T_Obs, T_Action]):
+class Agent(
+    Environment[T_Obs, T_Action],
+    Acting[T_Obs, T_Action],
+    Training[T_Obs, T_Action],
+    IO[T_Obs, T_Action],
+    Tensorboard[T_Obs, T_Action],
+):
     '''
     Define the interface of an Agent
+
+    To create an concrete agent that is runnable, the concrete class together
+    with all its sub-classes must provide implementation to all of the above 
+    interfaces.
     '''
     ...
