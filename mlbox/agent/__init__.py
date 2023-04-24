@@ -143,7 +143,7 @@ class BasicAgent(Props[T_Obs, T_Action],
                 print(f'\n{i+1}. {str(state_dict_path.relative_to(self.script_basedir))}')
                 print(state_dict_info(T.load(state_dict_path)))
             while True:
-                choice = input(f'\nChoose a model to load (Enter to skip): ')
+                choice = input(f'\nChoose a model to load (Enter to skip):\n>>> ')
                 if choice == '':
                     break
                 try:
@@ -158,13 +158,26 @@ class BasicAgent(Props[T_Obs, T_Action],
                 print(f'Loaded model: {str(chosen_file.relative_to(self.script_basedir))}')
                 break
 
-        if start_training or input(f'Start training the agent? ([y]/n) ').upper() != 'N':
+        if start_training or input(f'Start training the agent? ([y]/n):\n>>> ').upper() != 'N':
             # train agent
             self.train()
-            if input(f'Save model? y/[n]) ').upper() == 'Y':
-                save_path = self.script_basedir / name
+            # save model manually
+            while True:
+                save_name = input(f'\nSave model? (Type filename to save, Enter to skip):\n>>> ')
+                if save_name == '':
+                    break
+                default_suffix = f'.{self.state_dict_file_ext}'
+                if not save_name.endswith(default_suffix):
+                    save_name += default_suffix
+                try:
+                    save_path = self.script_basedir / Path(save_name)
+                    save_path.parent.mkdir(parents=True, exist_ok=True)
+                except Exception:
+                    print(f'Please enter a valid save path')
+                    continue
                 self.save(save_path)
                 print(f'Saved model: {save_path}')
+                break
 
     #
     # tensorboard
