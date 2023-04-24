@@ -3,7 +3,7 @@ from pathlib import Path
 from torch import Tensor
 
 
-def print_state_dict(d: dict[str, dict]) -> str:
+def state_dict_info(d: dict[str, dict]) -> str:
     '''
     returns a state dict save file's info
     '''
@@ -17,7 +17,7 @@ def print_state_dict(d: dict[str, dict]) -> str:
         # a nested dict
         elif isinstance(val, dict):
             repr += key + ' : '
-            repr += print_state_dict(val)
+            repr += state_dict_info(val)
             if i < len(d) - 1:
                 repr += '\n'
     return repr

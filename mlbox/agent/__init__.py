@@ -13,6 +13,7 @@ from mlbox.agent.props import Props
 from mlbox.events import TerminatedError
 from mlbox.interface.agent import Agent
 from mlbox.types import T_Action, T_Obs
+from mlbox.utils.io import scan_for_files, state_dict_info
 
 
 class BasicAgent(Props[T_Obs, T_Action],
@@ -127,6 +128,7 @@ class BasicAgent(Props[T_Obs, T_Action],
     #
     # I/O
     #
+    state_dict_file_ext = 'pth'
 
     @override
     def prompt(self,
@@ -140,11 +142,30 @@ class BasicAgent(Props[T_Obs, T_Action],
         script_path = Path(globals['__file__']) if globals else Path()
         base_dir = Path(script_path).parent.relative_to(Path.cwd())
         path = base_dir / name
-        if path.is_file():
-            if input(f'Model {path} exists, load? (y/[n]) ').upper() == 'Y':
+
+        # scan for .pth files
+        state_dict_files = scan_for_files(self.script_basedir, ext=self.state_dict_file_ext)
+        if len(state_dict_files) > 0:
+            print(f'{len(state_dict_files)} has been found:')
+            for i, state_dict_path in enumerate(state_dict_files):
+                print(f'\n{i+1}. {str(state_dict_path.relative_to(self.script_basedir))}')
+                print(state_dict_info(T.load(state_dict_path)))
+            while True:
+                choice = input(f'\nChoose a model to load (Enter to skip): ')
+                if choice == '':
+                    break
+                try:
+                    selected_idx = int(choice) - 1
+                    assert 0 <= selected_idx < len(state_dict_files)
+                    chosen_file = state_dict_files[selected_idx]
+                except Exception:
+                    print(f'Please enter a valid model index [1 - {len(state_dict_files)}]')
+                    continue
                 # load agent
-                self.load(path)
-                print(f'Loaded model: {path}')
+                self.load(chosen_file)
+                print(f'Loaded model: {str(chosen_file.relative_to(self.script_basedir))}')
+                break
+
         if start_training or input(f'Start training the agent? ([y]/n) ').upper() != 'N':
             # train agent
             self.train()
