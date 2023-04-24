@@ -135,14 +135,6 @@ class BasicAgent(Props[T_Obs, T_Action],
                name: str,
                *,
                start_training: bool = False) -> None:
-        # prepare caller info
-        frame = currentframe()
-        caller_frame = frame.f_back if frame else None
-        globals = caller_frame.f_globals if caller_frame else None
-        script_path = Path(globals['__file__']) if globals else Path()
-        base_dir = Path(script_path).parent.relative_to(Path.cwd())
-        path = base_dir / name
-
         # scan for .pth files
         state_dict_files = scan_for_files(self.script_basedir, ext=self.state_dict_file_ext)
         if len(state_dict_files) > 0:
@@ -170,8 +162,9 @@ class BasicAgent(Props[T_Obs, T_Action],
             # train agent
             self.train()
             if input(f'Save model? y/[n]) ').upper() == 'Y':
-                self.save(path)
-                print(f'Saved model: {path}')
+                save_path = self.script_basedir / name
+                self.save(save_path)
+                print(f'Saved model: {save_path}')
 
     #
     # tensorboard
