@@ -1,5 +1,5 @@
 from collections import deque
-from inspect import currentframe
+from datetime import datetime
 from pathlib import Path
 from statistics import mean
 from typing import Self
@@ -136,11 +136,15 @@ class BasicAgent(Props[T_Obs, T_Action],
                *,
                start_training: bool = False) -> None:
         # scan for .pth files
-        state_dict_files = scan_for_files(self.script_basedir, ext=self.state_dict_file_ext)
+        state_dict_files = scan_for_files(self.script_basedir,
+                                          ext=self.state_dict_file_ext,
+                                          sort_by_last_modified=True)
         if len(state_dict_files) > 0:
-            print(f'{len(state_dict_files)} has been found:')
-            for i, state_dict_path in enumerate(state_dict_files):
-                print(f'\n{i+1}. {str(state_dict_path.relative_to(self.script_basedir))}')
+            print('\nModels found:')
+            for i, (state_dict_path, last_modified, ) in enumerate(state_dict_files):
+                model_rel_path = str(state_dict_path.relative_to(self.script_basedir))
+                model_last_modified_datetime = datetime.fromtimestamp(round(last_modified))
+                print(f'\n{i+1}. {model_rel_path} ({model_last_modified_datetime})')
                 print(state_dict_info(T.load(state_dict_path)))
             while True:
                 choice = input(f'\nChoose a model to load (Enter to skip):\n>>> ')
@@ -149,7 +153,7 @@ class BasicAgent(Props[T_Obs, T_Action],
                 try:
                     selected_idx = int(choice) - 1
                     assert 0 <= selected_idx < len(state_dict_files)
-                    chosen_file = state_dict_files[selected_idx]
+                    chosen_file = state_dict_files[selected_idx][0]
                 except Exception:
                     print(f'Please enter a valid model index [1 - {len(state_dict_files)}]')
                     continue
