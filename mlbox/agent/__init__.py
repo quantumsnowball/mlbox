@@ -13,6 +13,7 @@ from mlbox.agent.props import Props
 from mlbox.events import TerminatedError
 from mlbox.interface.agent import Agent
 from mlbox.types import T_Action, T_Obs
+from mlbox.utils.datetime import localnow_string
 from mlbox.utils.io import scan_for_files, state_dict_info
 
 
@@ -92,7 +93,7 @@ class BasicAgent(Props[T_Obs, T_Action],
     report_progress_every = 10
     mean_reward_display_format = '+.1f'
     auto_save = False
-    auto_save_filename = 'model.pth'
+    auto_save_path = Path(f'.model/autosave_{localnow_string()}.pth')
     auto_save_start_eps = 3
 
     def print_evaluation_result(self,
@@ -112,8 +113,9 @@ class BasicAgent(Props[T_Obs, T_Action],
             if (self.auto_save
                     and len(self.vald_rolling_reward) >= self.auto_save_start_eps
                     and (self.vald_score_high is None or vald_score > self.vald_score_high)):
-                self.save(self.script_basedir / self.auto_save_filename)
-                print(f' [saved]', end='')
+                save_path = self.script_basedir / self.auto_save_path
+                save_path.parent.mkdir(parents=True, exist_ok=True)
+                self.save(save_path)
                 print(f' [saved]', end='', flush=True)
                 self.vald_score_high = vald_score
             # newline
