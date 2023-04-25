@@ -1,5 +1,6 @@
 from pandas import Timestamp
 from trbox.common.types import Symbol
+from trbox.market.binance.historical.windows import BinanceHistoricalWindows
 from trbox.market.yahoo.historical.windows import YahooHistoricalWindows
 
 from mlbox.interface.trenv.gymenv import GymEnv
@@ -14,11 +15,12 @@ class TrEnv(
     '''
     The interface for TrEnv
     '''
-    Market: type[YahooHistoricalWindows]
+    Market: type[YahooHistoricalWindows] | type[BinanceHistoricalWindows]
     interval: int
     symbol: Symbol
     start: Timestamp | str
     end: Timestamp | str
     length: int
+    freq: str  # TODO
 
     ...

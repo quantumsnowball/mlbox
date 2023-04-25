@@ -28,6 +28,7 @@ class BasicTrEnv(TrEnv[T_Obs, T_Action]):
             cls.start
             cls.end
             cls.length
+            cls.freq
             return super().__new__(cls)
         except AttributeError as e:
             raise NotImplementedError(e.name) from None
@@ -89,7 +90,8 @@ class BasicTrEnv(TrEnv[T_Obs, T_Action]):
                 symbols=(self.symbol,),
                 start=self.start,
                 end=self.end,
-                length=self.length),
+                length=self.length,
+                freq=self.freq),
             broker=PaperEX((self.symbol,))
         )
 
