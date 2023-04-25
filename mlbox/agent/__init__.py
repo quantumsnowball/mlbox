@@ -99,21 +99,22 @@ class BasicAgent(Props[T_Obs, T_Action],
                                 i: int) -> None:
         if i % self.report_progress_every == 0:
             # count
-            print(f' | Episode {i:>4d}', end='')
+            print(f' | Episode {i:>4d}', end='', flush=True)
             # train
             self.rolling_reward.append(self.play())
             train_score = mean(self.rolling_reward)
-            print(f' | train: {train_score:{self.mean_reward_display_format}}', end='')
+            print(f' | train: {train_score:{self.mean_reward_display_format}}', end='', flush=True)
             # validation
             self.vald_rolling_reward.append(self.play(env=self.vald_env))
             vald_score = mean(self.vald_rolling_reward)
-            print(f' | vald: {vald_score:{self.mean_reward_display_format}}', end='')
+            print(f' | vald: {vald_score:{self.mean_reward_display_format}}', end='', flush=True)
             # save best model
             if (self.auto_save
                     and len(self.vald_rolling_reward) >= self.auto_save_start_eps
                     and (self.vald_score_high is None or vald_score > self.vald_score_high)):
                 self.save(self.script_basedir / self.auto_save_filename)
                 print(f' [saved]', end='')
+                print(f' [saved]', end='', flush=True)
                 self.vald_score_high = vald_score
             # newline
             print('')
