@@ -18,6 +18,11 @@ class ConvLSTM_DDPGActorNet(Module):
                  Activation: type[Module] = ReLU,
                  min_action: float | NDArray[float32] = -1,
                  max_action: float | NDArray[float32] = +1,
+                 conv1d_in_channels: int = 1,
+                 conv1d_out_channels: int = 16,
+                 conv1d_kernel_size: int = 10,
+                 conv1d_stride: int = 3,
+                 conv1d_padding: int = 2,
                  lstm_hidden_dim: int = 64,
                  lstm_layers_n: int = 2):
         super().__init__()
@@ -25,16 +30,16 @@ class ConvLSTM_DDPGActorNet(Module):
         self.min_action = Parameter(tensor(min_action), requires_grad=False)
         self.max_action = Parameter(tensor(max_action), requires_grad=False)
         # conv1d
-        self.conv1d = Conv1d(in_channels=1,
-                             out_channels=16,
-                             kernel_size=10,
-                             stride=3,
-                             padding=2,
+        self.conv1d = Conv1d(in_channels=conv1d_in_channels,
+                             out_channels=conv1d_out_channels,
+                             kernel_size=conv1d_kernel_size,
+                             stride=conv1d_stride,
+                             padding=conv1d_padding,
                              )
         self.conv1d_feat = (in_dim - self.conv1d.kernel_size[0] +
                             2 * int(self.conv1d.padding[0])) / self.conv1d.stride[0] + 1
         # lstm
-        self.lstm = LSTM(input_size=16,
+        self.lstm = LSTM(input_size=conv1d_out_channels,
                          hidden_size=lstm_hidden_dim,
                          num_layers=lstm_layers_n,
                          batch_first=True)
@@ -53,7 +58,7 @@ class ConvLSTM_DDPGActorNet(Module):
         )
 
     def forward(self, obs: Tensor) -> Tensor:
-        x = obs.unsqueeze(-2)
+        x = obs.transpose(-2, -1)
         x = self.conv1d(x)
         x = x.transpose(-2, -1)
         x, _ = self.lstm(x)
@@ -71,6 +76,7 @@ class ConvLSTM_DDPGCriticNet(Module):
                  hidden_dim: int = 256,
                  hidden_n: int = 0,
                  Activation: type[Module] = ReLU,
+                 lstm_input_size: int = 1,
                  lstm_hidden_dim: int = 64,
                  lstm_layers_n: int = 2):
         super().__init__()
@@ -78,7 +84,7 @@ class ConvLSTM_DDPGCriticNet(Module):
         self.lstm_L = obs_dim
         self.lstm_feat = obs_dim*lstm_hidden_dim
         # obs
-        self.lstm = LSTM(input_size=1,
+        self.lstm = LSTM(input_size=lstm_input_size,
                          hidden_size=lstm_hidden_dim,
                          num_layers=lstm_layers_n,
                          batch_first=True)
@@ -111,7 +117,7 @@ class ConvLSTM_DDPGCriticNet(Module):
         )
 
     def forward(self, obs: Tensor, action: Tensor) -> Tensor:
-        lstm_out, _ = self.lstm(obs.unsqueeze(-1))
+        lstm_out, _ = self.lstm(obs)
         obs_net_out = self.obs_net(lstm_out.flatten(-2))
         action_net_out = self.action_net(action)
         common_in = T.relu(T.cat([obs_net_out, action_net_out], dim=-1))
