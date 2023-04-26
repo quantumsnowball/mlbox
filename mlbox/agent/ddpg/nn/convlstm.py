@@ -76,18 +76,28 @@ class ConvLSTM_DDPGCriticNet(Module):
                  hidden_dim: int = 256,
                  hidden_n: int = 0,
                  Activation: type[Module] = ReLU,
-                 lstm_input_size: int = 1,
+                 conv1d_in_channels: int = 1,
+                 conv1d_out_channels: int = 16,
+                 conv1d_kernel_size: int = 10,
+                 conv1d_stride: int = 3,
+                 conv1d_padding: int = 2,
                  lstm_hidden_dim: int = 64,
                  lstm_layers_n: int = 2):
         super().__init__()
-        # const
-        self.lstm_L = obs_dim
-        self.lstm_feat = obs_dim*lstm_hidden_dim
         # obs
-        self.lstm = LSTM(input_size=lstm_input_size,
+        self.conv1d = Conv1d(in_channels=conv1d_in_channels,
+                             out_channels=conv1d_out_channels,
+                             kernel_size=conv1d_kernel_size,
+                             stride=conv1d_stride,
+                             padding=conv1d_padding,
+                             )
+        self.conv1d_feat = (obs_dim - self.conv1d.kernel_size[0] +
+                            2 * int(self.conv1d.padding[0])) / self.conv1d.stride[0] + 1
+        self.lstm = LSTM(input_size=conv1d_out_channels,
                          hidden_size=lstm_hidden_dim,
                          num_layers=lstm_layers_n,
                          batch_first=True)
+        self.lstm_feat = int(self.conv1d_feat*lstm_hidden_dim)
         self.obs_net = Sequential(
             Linear(self.lstm_feat, hidden_dim),
             Activation(),
@@ -117,7 +127,8 @@ class ConvLSTM_DDPGCriticNet(Module):
         )
 
     def forward(self, obs: Tensor, action: Tensor) -> Tensor:
-        lstm_out, _ = self.lstm(obs)
+        conv1d_out = self.conv1d(obs.transpose(-2, -1)).transpose(-2, -1)
+        lstm_out, _ = self.lstm(conv1d_out)
         obs_net_out = self.obs_net(lstm_out.flatten(-2))
         action_net_out = self.action_net(action)
         common_in = T.relu(T.cat([obs_net_out, action_net_out], dim=-1))
