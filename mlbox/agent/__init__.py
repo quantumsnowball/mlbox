@@ -134,10 +134,7 @@ class BasicAgent(Props[T_Obs, T_Action],
     state_dict_file_ext = 'pth'
 
     @override
-    def prompt(self,
-               name: str,
-               *,
-               start_training: bool = False) -> None:
+    def prompt(self, *, start_training: bool = False) -> None:
         # scan for .pth files
         state_dict_files = scan_for_files(self.script_basedir,
                                           ext=self.state_dict_file_ext,
