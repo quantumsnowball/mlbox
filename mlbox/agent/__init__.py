@@ -15,6 +15,7 @@ from mlbox.interface.agent import Agent
 from mlbox.types import T_Action, T_Obs
 from mlbox.utils.datetime import localnow_string
 from mlbox.utils.io import scan_for_files, state_dict_info
+from mlbox.utils.log import log_output
 
 
 class BasicAgent(Props[T_Obs, T_Action],
@@ -145,8 +146,10 @@ class BasicAgent(Props[T_Obs, T_Action],
     # I/O
     #
     state_dict_file_ext = 'pth'
+    auto_log_output = True
 
     @override
+    @log_output
     def prompt(self, *, start_training: bool = False) -> None:
         # scan for .pth files
         state_dict_files = scan_for_files(self.script_basedir,
