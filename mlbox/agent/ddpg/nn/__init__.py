@@ -5,7 +5,8 @@ import torch.nn.functional as F
 from numpy import float32
 from numpy.typing import NDArray
 from torch import Tensor, tensor
-from torch.nn import Linear, Module, Parameter, ReLU, Sequential
+from torch.nn import (BatchNorm1d, Identity, Linear, Module, Parameter, ReLU,
+                      Sequential)
 
 
 class DDPGActorNet(Module):
@@ -16,6 +17,7 @@ class DDPGActorNet(Module):
                  hidden_dim: int = 256,
                  hidden_n: int = 1,
                  Activation: type[Module] = ReLU,
+                 batch_normalization: bool = True,
                  min_action: float | NDArray[float32] = -1,
                  max_action: float | NDArray[float32] = +1):
         super().__init__()
@@ -24,10 +26,12 @@ class DDPGActorNet(Module):
             # input
             Linear(in_dim, hidden_dim),
             Activation(),
+            BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             # hidden
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
                 Activation(),
+                BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             ) for _ in range(hidden_n))),
             # output
             Linear(hidden_dim, out_dim),
@@ -49,15 +53,18 @@ class DDPGCriticNet(Module):
                  *,
                  hidden_dim: int = 256,
                  hidden_n: int = 0,
-                 Activation: type[Module] = ReLU):
+                 Activation: type[Module] = ReLU,
+                 batch_normalization: bool = True,):
         super().__init__()
         # obs
         self.obs_net = Sequential(
             Linear(obs_dim, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             Activation(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
-                Activation()
+                Activation(),
+                BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             ) for _ in range(hidden_n)))
         )
         # action
