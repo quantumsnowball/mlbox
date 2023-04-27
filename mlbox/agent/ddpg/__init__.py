@@ -43,15 +43,14 @@ class DDPGAgent(Props[T_Obs, T_Action],
 
     @override
     def learn(self) -> None:
+        # set mode
+        self.use_train_mode()
         for _ in range(self.n_epoch):
             # prepare batch of experience
             batch = self.replay.sample(self.batch_size, device=self.device)
             obs, action, reward, next_obs, terminated = batch.tuple
             reward = batch.reward.unsqueeze(1)
             terminated = batch.terminated.unsqueeze(1)
-            # set train mode
-            self.actor_net.train()
-            self.critic_net.train()
             # calc target
             q_target = self.critic_net_target(next_obs, self.actor_net_target(next_obs))
             critic_target = reward + self.gamma*q_target*(~terminated)
@@ -67,6 +66,8 @@ class DDPGAgent(Props[T_Obs, T_Action],
             actor_loss = -self.critic_net(obs, self.actor_net(obs)).mean()
             actor_loss.backward()
             self.actor_optimizer.step()
+        # reset mode
+        self.use_eval_mode()
 
     n_eps = 100
     update_target_every = 1
@@ -75,10 +76,10 @@ class DDPGAgent(Props[T_Obs, T_Action],
     def train(self) -> None:
         self.log_graphs()
         self.sync_targets()
-        self.actor_net.train()
         self.reset_rolling_reward()
         for i_eps in range(1, self.n_eps+1):
             try:
+                # progress
                 self.progress = min(max(i_eps/self.n_eps, 0), 1)
                 # reset to a new environment
                 obs, *_ = self.env.reset()
@@ -121,9 +122,10 @@ class DDPGAgent(Props[T_Obs, T_Action],
     max_noise = 2.0
 
     def explore(self, obs: T_Obs, progress: float) -> T_Action:
+        self.use_eval_mode()
         with torch.no_grad():
             obs_tensor = torch.tensor(obs, device=self.device)
-            action = self.actor_net(obs_tensor)
+            action = self.actor_net(obs_tensor.unsqueeze(0)).squeeze(0)
             action = action.cpu().numpy()
             std = self.min_noise + (1-progress)*(self.max_noise-self.min_noise)
             noise = np.random.normal(0, std, action.shape)
@@ -132,9 +134,10 @@ class DDPGAgent(Props[T_Obs, T_Action],
 
     @override
     def decide(self, obs: T_Obs) -> T_Action:
+        self.use_eval_mode()
         with torch.no_grad():
             obs_tensor = torch.tensor(obs, device=self.device)
-            action_tensor: Tensor = self.actor_net(obs_tensor)
+            action_tensor: Tensor = self.actor_net(obs_tensor.unsqueeze(0)).squeeze(0)
             action: T_Action = action_tensor.cpu().numpy()
             return action
 

@@ -5,7 +5,8 @@ import torch.nn.functional as F
 from numpy import float32
 from numpy.typing import NDArray
 from torch import Tensor, tensor
-from torch.nn import LSTM, Linear, Module, Parameter, ReLU, Sequential
+from torch.nn import (LSTM, BatchNorm1d, Identity, Linear, Module, Parameter,
+                      ReLU, Sequential)
 
 
 class LSTM_DDPGActorNet(Module):
@@ -33,16 +34,19 @@ class LSTM_DDPGActorNet(Module):
                          batch_first=True)
         self.lstm_post = Sequential(
             Activation(),
+            BatchNorm1d(lstm_hidden_dim) if batch_normalization else Identity(),
         )
         self.lstm_feat = int(in_dim*lstm_hidden_dim)
         # fc
         self.fc = Sequential(
             Linear(self.lstm_feat, hidden_dim),
             Activation(),
+            BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             # hidden
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
                 Activation(),
+                BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             ) for _ in range(hidden_n))),
             # output
             Linear(hidden_dim, out_dim),
@@ -50,7 +54,7 @@ class LSTM_DDPGActorNet(Module):
 
     def forward(self, obs: Tensor) -> Tensor:
         x, _ = self.lstm(obs)
-        x = self.lstm_post(x)
+        x = self.lstm_post(x.transpose(-2, -1))
         x = x.flatten(-2)
         x = self.fc(x)
         x = F.sigmoid(x) * (self.max_action - self.min_action) + self.min_action
@@ -82,34 +86,40 @@ class LSTM_DDPGCriticNet(Module):
         self.obs_net = Sequential(
             Linear(self.lstm_feat, hidden_dim),
             Activation(),
+            BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
-                Activation()
+                Activation(),
+                BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             ) for _ in range(hidden_n)))
         )
         # action
         self.action_net = Sequential(
             Linear(action_dim, hidden_dim),
             Activation(),
+            BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
-                Activation()
+                Activation(),
+                BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             ) for _ in range(hidden_n)))
         )
         # common
         self.common_net = Sequential(
             Linear(hidden_dim*2, hidden_dim),
             Activation(),
+            BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
-                Activation()
+                Activation(),
+                BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             ) for _ in range(hidden_n))),
             Linear(hidden_dim, 1),
         )
 
     def forward(self, obs: Tensor, action: Tensor) -> Tensor:
         lstm_out, _ = self.lstm(obs)
-        lstm_out = self.lstm_post(lstm_out)
+        lstm_out = self.lstm_post(lstm_out.transpose(-2, -1))
         obs_net_out = self.obs_net(lstm_out.flatten(-2))
         action_net_out = self.action_net(action)
         common_in = T.relu(T.cat([obs_net_out, action_net_out], dim=-1))

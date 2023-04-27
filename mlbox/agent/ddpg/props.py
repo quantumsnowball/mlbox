@@ -2,6 +2,7 @@ from gymnasium import Env
 from gymnasium.spaces import Box
 from torch.nn import Module
 from torch.optim import Optimizer
+from trbox.market.binance.historical.windows import override
 
 from mlbox.interface.agent import Agent
 from mlbox.types import T_Action, T_Obs
@@ -90,3 +91,16 @@ class Props(Agent[T_Obs, T_Action]):
     @critic_optimizer.setter
     def critic_optimizer(self, critic_optimizer: Optimizer) -> None:
         self._critic_optimizer = critic_optimizer
+
+    #
+    # helpers
+    #
+    @property
+    @override
+    def neural_nets(self) -> dict[str, Module]:
+        return dict(
+            actor_net=self.actor_net,
+            critic_net=self.critic_net,
+            actor_net_target=self.actor_net_target,
+            critic_net_target=self.critic_net_target,
+        )

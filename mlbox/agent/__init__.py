@@ -40,6 +40,19 @@ class BasicAgent(Props[T_Obs, T_Action],
             self.writer = SummaryWriter(self.tensorboard_logdir)
 
     #
+    # nn
+    #
+    @override
+    def use_train_mode(self) -> None:
+        for net in self.neural_nets.values():
+            net.train()
+
+    @override
+    def use_eval_mode(self) -> None:
+        for net in self.neural_nets.values():
+            net.eval()
+
+    #
     # training
     #
 
