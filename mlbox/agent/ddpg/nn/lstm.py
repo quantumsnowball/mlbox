@@ -18,6 +18,7 @@ class LSTM_DDPGActorNet(Module):
                  Activation: type[Module] = ReLU,
                  min_action: float | NDArray[float32] = -1,
                  max_action: float | NDArray[float32] = +1,
+                 batch_normalization: bool = True,
                  lstm_input_dim: int,
                  lstm_hidden_dim: int = 64,
                  lstm_layers_n: int = 2):
@@ -30,6 +31,9 @@ class LSTM_DDPGActorNet(Module):
                          hidden_size=lstm_hidden_dim,
                          num_layers=lstm_layers_n,
                          batch_first=True)
+        self.lstm_post = Sequential(
+            Activation(),
+        )
         self.lstm_feat = int(in_dim*lstm_hidden_dim)
         # fc
         self.fc = Sequential(
@@ -46,6 +50,7 @@ class LSTM_DDPGActorNet(Module):
 
     def forward(self, obs: Tensor) -> Tensor:
         x, _ = self.lstm(obs)
+        x = self.lstm_post(x)
         x = x.flatten(-2)
         x = self.fc(x)
         x = F.sigmoid(x) * (self.max_action - self.min_action) + self.min_action
@@ -60,6 +65,7 @@ class LSTM_DDPGCriticNet(Module):
                  hidden_dim: int = 256,
                  hidden_n: int = 0,
                  Activation: type[Module] = ReLU,
+                 batch_normalization: bool = True,
                  lstm_input_dim: int,
                  lstm_hidden_dim: int = 64,
                  lstm_layers_n: int = 2):
@@ -69,6 +75,9 @@ class LSTM_DDPGCriticNet(Module):
                          hidden_size=lstm_hidden_dim,
                          num_layers=lstm_layers_n,
                          batch_first=True)
+        self.lstm_post = Sequential(
+            Activation(),
+        )
         self.lstm_feat = int(obs_dim*lstm_hidden_dim)
         self.obs_net = Sequential(
             Linear(self.lstm_feat, hidden_dim),
@@ -100,6 +109,7 @@ class LSTM_DDPGCriticNet(Module):
 
     def forward(self, obs: Tensor, action: Tensor) -> Tensor:
         lstm_out, _ = self.lstm(obs)
+        lstm_out = self.lstm_post(lstm_out)
         obs_net_out = self.obs_net(lstm_out.flatten(-2))
         action_net_out = self.action_net(action)
         common_in = T.relu(T.cat([obs_net_out, action_net_out], dim=-1))
