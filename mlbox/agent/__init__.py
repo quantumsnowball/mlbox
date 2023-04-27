@@ -94,7 +94,7 @@ class BasicAgent(Props[T_Obs, T_Action],
     mean_reward_display_format = '+.1f'
     auto_save = False
     auto_save_path = Path(f'.model/autosave_{localnow_string()}.pth')
-    auto_save_start_eps = 3
+    auto_save_start_eps = 5
 
     def print_evaluation_result(self,
                                 i: int) -> None:
