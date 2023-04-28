@@ -70,6 +70,7 @@ class ConvLSTM_DDPGActorNet(Module):
         x = self.conv1d(x)
         x = x.transpose(-2, -1)
         x, _ = self.lstm(x)
+        x = self.lstm_post(x.transpose(-2, -1))
         x = x.flatten(-2)
         x = self.fc(x)
         x = F.sigmoid(x) * (self.max_action - self.min_action) + self.min_action
