@@ -19,7 +19,7 @@ class LSTM_DDPGActorNet(Module):
                  Activation: type[Module] = ReLU,
                  min_action: float | NDArray[float32] = -1,
                  max_action: float | NDArray[float32] = +1,
-                 batch_normalization: bool = True,
+                 batch_norm: bool = True,
                  lstm_input_dim: int,
                  lstm_hidden_dim: int = 64,
                  lstm_layers_n: int = 2):
@@ -33,20 +33,20 @@ class LSTM_DDPGActorNet(Module):
                          num_layers=lstm_layers_n,
                          batch_first=True)
         self.lstm_post = Sequential(
+            BatchNorm1d(lstm_hidden_dim) if batch_norm else Identity(),
             Activation(),
-            BatchNorm1d(lstm_hidden_dim) if batch_normalization else Identity(),
         )
         self.lstm_feat = int(in_dim*lstm_hidden_dim)
         # fc
         self.fc = Sequential(
             Linear(self.lstm_feat, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
-            BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             # hidden
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
-                BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             ) for _ in range(hidden_n))),
             # output
             Linear(hidden_dim, out_dim),
@@ -69,7 +69,7 @@ class LSTM_DDPGCriticNet(Module):
                  hidden_dim: int = 256,
                  hidden_n: int = 0,
                  Activation: type[Module] = ReLU,
-                 batch_normalization: bool = True,
+                 batch_norm: bool = True,
                  lstm_input_dim: int,
                  lstm_hidden_dim: int = 64,
                  lstm_layers_n: int = 2):
@@ -80,39 +80,40 @@ class LSTM_DDPGCriticNet(Module):
                          num_layers=lstm_layers_n,
                          batch_first=True)
         self.lstm_post = Sequential(
+            BatchNorm1d(lstm_hidden_dim) if batch_norm else Identity(),
             Activation(),
         )
         self.lstm_feat = int(obs_dim*lstm_hidden_dim)
         self.obs_net = Sequential(
             Linear(self.lstm_feat, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
-            BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
-                BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             ) for _ in range(hidden_n)))
         )
         # action
         self.action_net = Sequential(
             Linear(action_dim, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
-            BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
-                BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             ) for _ in range(hidden_n)))
         )
         # common
         self.common_net = Sequential(
             Linear(hidden_dim*2, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
-            BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
-                BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             ) for _ in range(hidden_n))),
             Linear(hidden_dim, 1),
         )

@@ -5,7 +5,8 @@ import torch.nn.functional as F
 from numpy import float32
 from numpy.typing import NDArray
 from torch import Tensor, tensor
-from torch.nn import LSTM, Conv1d, Linear, Module, Parameter, ReLU, Sequential
+from torch.nn import (LSTM, BatchNorm1d, Conv1d, Identity, Linear, Module,
+                      Parameter, ReLU, Sequential)
 
 
 class ConvLSTM_DDPGActorNet(Module):
@@ -16,6 +17,7 @@ class ConvLSTM_DDPGActorNet(Module):
                  hidden_dim: int = 256,
                  hidden_n: int = 1,
                  Activation: type[Module] = ReLU,
+                 batch_norm: bool = True,
                  min_action: float | NDArray[float32] = -1,
                  max_action: float | NDArray[float32] = +1,
                  conv1d_in_channels: int = 1,
@@ -43,14 +45,20 @@ class ConvLSTM_DDPGActorNet(Module):
                          hidden_size=lstm_hidden_dim,
                          num_layers=lstm_layers_n,
                          batch_first=True)
+        self.lstm_post = Sequential(
+            BatchNorm1d(lstm_hidden_dim) if batch_norm else Identity(),
+            Activation(),
+        )
         self.lstm_feat = int(self.conv1d_feat*lstm_hidden_dim)
         # fc
         self.fc = Sequential(
             Linear(self.lstm_feat, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
             # hidden
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
             ) for _ in range(hidden_n))),
             # output
@@ -76,6 +84,7 @@ class ConvLSTM_DDPGCriticNet(Module):
                  hidden_dim: int = 256,
                  hidden_n: int = 0,
                  Activation: type[Module] = ReLU,
+                 batch_norm: bool = True,
                  conv1d_in_channels: int = 1,
                  conv1d_out_channels: int = 16,
                  conv1d_kernel_size: int = 10,
@@ -100,27 +109,33 @@ class ConvLSTM_DDPGCriticNet(Module):
         self.lstm_feat = int(self.conv1d_feat*lstm_hidden_dim)
         self.obs_net = Sequential(
             Linear(self.lstm_feat, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation()
             ) for _ in range(hidden_n)))
         )
         # action
         self.action_net = Sequential(
             Linear(action_dim, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation()
             ) for _ in range(hidden_n)))
         )
         # common
         self.common_net = Sequential(
             Linear(hidden_dim*2, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation()
             ) for _ in range(hidden_n))),
             Linear(hidden_dim, 1),

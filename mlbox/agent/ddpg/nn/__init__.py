@@ -17,7 +17,7 @@ class DDPGActorNet(Module):
                  hidden_dim: int = 256,
                  hidden_n: int = 1,
                  Activation: type[Module] = ReLU,
-                 batch_normalization: bool = True,
+                 batch_norm: bool = True,
                  min_action: float | NDArray[float32] = -1,
                  max_action: float | NDArray[float32] = +1):
         super().__init__()
@@ -25,13 +25,13 @@ class DDPGActorNet(Module):
         self.net = Sequential(
             # input
             Linear(in_dim, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
-            BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             # hidden
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
-                BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             ) for _ in range(hidden_n))),
             # output
             Linear(hidden_dim, out_dim),
@@ -54,34 +54,38 @@ class DDPGCriticNet(Module):
                  hidden_dim: int = 256,
                  hidden_n: int = 0,
                  Activation: type[Module] = ReLU,
-                 batch_normalization: bool = True,):
+                 batch_norm: bool = True,):
         super().__init__()
         # obs
         self.obs_net = Sequential(
             Linear(obs_dim, hidden_dim),
-            BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
-                BatchNorm1d(hidden_dim) if batch_normalization else Identity(),
             ) for _ in range(hidden_n)))
         )
         # action
         self.action_net = Sequential(
             Linear(action_dim, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation()
             ) for _ in range(hidden_n)))
         )
         # common
         self.common_net = Sequential(
             Linear(hidden_dim*2, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation()
             ) for _ in range(hidden_n))),
             Linear(hidden_dim, 1),
