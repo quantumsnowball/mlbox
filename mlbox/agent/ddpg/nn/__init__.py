@@ -5,8 +5,8 @@ import torch.nn.functional as F
 from numpy import float32
 from numpy.typing import NDArray
 from torch import Tensor, tensor
-from torch.nn import (BatchNorm1d, Identity, Linear, Module, Parameter, ReLU,
-                      Sequential)
+from torch.nn import (BatchNorm1d, Dropout, Identity, Linear, Module,
+                      Parameter, ReLU, Sequential)
 
 
 class DDPGActorNet(Module):
@@ -18,6 +18,7 @@ class DDPGActorNet(Module):
                  hidden_n: int = 1,
                  Activation: type[Module] = ReLU,
                  batch_norm: bool = True,
+                 dropout: float | None = 0.0,
                  min_action: float | NDArray[float32] = -1,
                  max_action: float | NDArray[float32] = +1):
         super().__init__()
@@ -27,11 +28,13 @@ class DDPGActorNet(Module):
             Linear(in_dim, hidden_dim),
             BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
+            Dropout(dropout) if dropout is not None else Identity(),
             # hidden
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
                 BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(hidden_n))),
             # output
             Linear(hidden_dim, out_dim),
@@ -54,17 +57,20 @@ class DDPGCriticNet(Module):
                  hidden_dim: int = 256,
                  hidden_n: int = 0,
                  Activation: type[Module] = ReLU,
-                 batch_norm: bool = True,):
+                 batch_norm: bool = True,
+                 dropout: float | None = 0.0,):
         super().__init__()
         # obs
         self.obs_net = Sequential(
             Linear(obs_dim, hidden_dim),
             BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
+            Dropout(dropout) if dropout is not None else Identity(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
                 BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(hidden_n)))
         )
         # action
@@ -72,10 +78,12 @@ class DDPGCriticNet(Module):
             Linear(action_dim, hidden_dim),
             BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
+            Dropout(dropout) if dropout is not None else Identity(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
                 BatchNorm1d(hidden_dim) if batch_norm else Identity(),
-                Activation()
+                Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(hidden_n)))
         )
         # common
@@ -83,10 +91,12 @@ class DDPGCriticNet(Module):
             Linear(hidden_dim*2, hidden_dim),
             BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
+            Dropout(dropout) if dropout is not None else Identity(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
                 BatchNorm1d(hidden_dim) if batch_norm else Identity(),
-                Activation()
+                Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(hidden_n))),
             Linear(hidden_dim, 1),
         )

@@ -5,8 +5,8 @@ import torch.nn.functional as F
 from numpy import float32
 from numpy.typing import NDArray
 from torch import Tensor, tensor
-from torch.nn import (LSTM, BatchNorm1d, Identity, Linear, Module, Parameter,
-                      ReLU, Sequential)
+from torch.nn import (LSTM, BatchNorm1d, Dropout, Identity, Linear, Module,
+                      Parameter, ReLU, Sequential)
 
 
 class LSTM_DDPGActorNet(Module):
@@ -20,6 +20,7 @@ class LSTM_DDPGActorNet(Module):
                  min_action: float | NDArray[float32] = -1,
                  max_action: float | NDArray[float32] = +1,
                  batch_norm: bool = True,
+                 dropout: float | None = 0.0,
                  lstm_input_dim: int,
                  lstm_hidden_dim: int = 64,
                  lstm_layers_n: int = 2):
@@ -35,6 +36,7 @@ class LSTM_DDPGActorNet(Module):
         self.lstm_post = Sequential(
             BatchNorm1d(lstm_hidden_dim) if batch_norm else Identity(),
             Activation(),
+            Dropout(dropout) if dropout is not None else Identity(),
         )
         self.lstm_feat = int(in_dim*lstm_hidden_dim)
         # fc
@@ -42,11 +44,13 @@ class LSTM_DDPGActorNet(Module):
             Linear(self.lstm_feat, hidden_dim),
             BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
+            Dropout(dropout) if dropout is not None else Identity(),
             # hidden
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
                 BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(hidden_n))),
             # output
             Linear(hidden_dim, out_dim),
@@ -70,6 +74,7 @@ class LSTM_DDPGCriticNet(Module):
                  hidden_n: int = 0,
                  Activation: type[Module] = ReLU,
                  batch_norm: bool = True,
+                 dropout: float | None = 0.0,
                  lstm_input_dim: int,
                  lstm_hidden_dim: int = 64,
                  lstm_layers_n: int = 2):
@@ -82,16 +87,19 @@ class LSTM_DDPGCriticNet(Module):
         self.lstm_post = Sequential(
             BatchNorm1d(lstm_hidden_dim) if batch_norm else Identity(),
             Activation(),
+            Dropout(dropout) if dropout is not None else Identity(),
         )
         self.lstm_feat = int(obs_dim*lstm_hidden_dim)
         self.obs_net = Sequential(
             Linear(self.lstm_feat, hidden_dim),
             BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
+            Dropout(dropout) if dropout is not None else Identity(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
                 BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(hidden_n)))
         )
         # action
@@ -99,10 +107,12 @@ class LSTM_DDPGCriticNet(Module):
             Linear(action_dim, hidden_dim),
             BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
+            Dropout(dropout) if dropout is not None else Identity(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
                 BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(hidden_n)))
         )
         # common
@@ -110,10 +120,12 @@ class LSTM_DDPGCriticNet(Module):
             Linear(hidden_dim*2, hidden_dim),
             BatchNorm1d(hidden_dim) if batch_norm else Identity(),
             Activation(),
+            Dropout(dropout) if dropout is not None else Identity(),
             *chain(*((
                 Linear(hidden_dim, hidden_dim),
                 BatchNorm1d(hidden_dim) if batch_norm else Identity(),
                 Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(hidden_n))),
             Linear(hidden_dim, 1),
         )
