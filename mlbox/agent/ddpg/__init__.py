@@ -8,7 +8,7 @@ from torch.nn import Module
 from typing_extensions import override
 
 from mlbox.agent import BasicAgent
-from mlbox.agent.ddpg.memoryondevice import CachedReplay
+from mlbox.agent.ddpg.memory import CachedReplay
 from mlbox.agent.ddpg.props import Props
 from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
