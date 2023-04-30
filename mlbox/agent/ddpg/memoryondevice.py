@@ -79,6 +79,7 @@ class Replay(Dataset[Experience],
         loader = DataLoader[Experience](self,
                                         batch_size,
                                         shuffle=True,
+                                        drop_last=True,
                                         collate_fn=collate)
         return loader
 

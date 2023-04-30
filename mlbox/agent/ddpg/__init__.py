@@ -67,7 +67,7 @@ class DDPGAgent(Props[T_Obs, T_Action],
             actor_loss.backward()
             self.actor_optimizer.step()
             #
-            if i_epoch + 1 >= self.n_epoch:
+            if self.n_epoch > 0 and i_epoch + 1 >= self.n_epoch:
                 break
 
         # reset mode
