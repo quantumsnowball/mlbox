@@ -64,6 +64,5 @@ def log_output(fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
             with TeeLogger(save_path):
                 fn(self, *args, **kwargs)
         else:
-            breakpoint()
             fn(self, *args, **kwargs)
     return wrapped
