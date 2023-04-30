@@ -32,5 +32,5 @@ class MyAgent(A2CDiscreteAgent[Obs, Action]):
 
 
 agent = MyAgent()
-agent.prompt('model.pth')
+agent.prompt()
 agent.play(agent.max_step, env=agent.render_env)
