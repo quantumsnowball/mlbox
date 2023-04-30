@@ -8,7 +8,7 @@ from torch.nn import Module
 from typing_extensions import override
 
 from mlbox.agent import BasicAgent
-from mlbox.agent.ddpg.memory import CachedReplay
+from mlbox.agent.ddpg.memoryondevice import CachedReplay
 from mlbox.agent.ddpg.props import Props
 from mlbox.events import TerminatedError
 from mlbox.types import T_Action, T_Obs
@@ -21,7 +21,8 @@ class DDPGAgent(Props[T_Obs, T_Action],
 
     def __init__(self) -> None:
         super().__init__()
-        self.replay = CachedReplay[T_Obs, T_Action](self.replay_size)
+        self.replay = CachedReplay[T_Obs, T_Action](self.replay_size,
+                                                    device=self.device)
         self.min_action = 0
         self.max_action = 1
 
@@ -45,9 +46,8 @@ class DDPGAgent(Props[T_Obs, T_Action],
     def learn(self) -> None:
         # set mode
         self.use_train_mode()
-        for _ in range(self.n_epoch):
+        for i_epoch, batch in enumerate(self.replay.dataloader(self.batch_size)):
             # prepare batch of experience
-            batch = self.replay.sample(self.batch_size, device=self.device)
             obs, action, reward, next_obs, terminated = batch.tuple
             reward = batch.reward.unsqueeze(1)
             terminated = batch.terminated.unsqueeze(1)
@@ -66,6 +66,10 @@ class DDPGAgent(Props[T_Obs, T_Action],
             actor_loss = -self.critic_net(obs, self.actor_net(obs)).mean()
             actor_loss.backward()
             self.actor_optimizer.step()
+            #
+            if i_epoch + 1 >= self.n_epoch:
+                break
+
         # reset mode
         self.use_eval_mode()
 
