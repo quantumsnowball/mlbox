@@ -91,6 +91,9 @@ class BasicAgent(Props[T_Obs, T_Action],
         self.vald_rolling_reward = deque[float](maxlen=self.rolling_reward_ma)
         self.vald_score_high: float | None = None
 
+    def reset_eps_timer(self) -> None:
+        self.eps_start_time = datetime.now()
+
     #
     # progress report
     #
@@ -106,6 +109,7 @@ class BasicAgent(Props[T_Obs, T_Action],
 
     report_progress_every = 10
     mean_reward_display_format = '+.1f'
+    show_eps_time = True
     auto_save = False
     auto_save_path = Path(f'.model/autosave_{localnow_string()}.pth')
     auto_save_start_eps = 5
@@ -123,6 +127,11 @@ class BasicAgent(Props[T_Obs, T_Action],
             self.vald_rolling_reward.append(self.play(env=self.vald_env))
             vald_score = mean(self.vald_rolling_reward)
             print(f' | vald: {vald_score:{self.mean_reward_display_format}}', end='', flush=True)
+            # time duration
+            if self.show_eps_time:
+                duration = (datetime.now() - self.eps_start_time).total_seconds()
+                print(f' | {duration:.2f}s', end='', flush=True)
+                self.reset_eps_timer()
             # save best model
             if (self.auto_save
                     and len(self.vald_rolling_reward) >= self.auto_save_start_eps

@@ -81,6 +81,7 @@ class DDPGAgent(Props[T_Obs, T_Action],
         self.log_graphs()
         self.sync_targets()
         self.reset_rolling_reward()
+        self.reset_eps_timer()
         for i_eps in range(1, self.n_eps+1):
             try:
                 # progress
