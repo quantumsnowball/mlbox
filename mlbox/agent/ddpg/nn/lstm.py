@@ -23,7 +23,7 @@ class LSTM_DDPGActorNet(Module):
                  dropout: float | None = 0.0,
                  lstm_input_dim: int,
                  lstm_hidden_dim: int = 64,
-                 lstm_layers_n: int = 2):
+                 lstm_layers_n: int = 1):
         super().__init__()
         # const
         self.min_action = Parameter(tensor(min_action), requires_grad=False)
@@ -77,7 +77,7 @@ class LSTM_DDPGCriticNet(Module):
                  dropout: float | None = 0.0,
                  lstm_input_dim: int,
                  lstm_hidden_dim: int = 64,
-                 lstm_layers_n: int = 2):
+                 lstm_layers_n: int = 1):
         super().__init__()
         # obs
         self.lstm = LSTM(input_size=lstm_input_dim,

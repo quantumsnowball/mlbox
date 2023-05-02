@@ -46,5 +46,5 @@ class MyAgent(DDPGAgent[Obs, Action]):
 
 
 agent = MyAgent()
-agent.prompt('model.pth')
+agent.prompt()
 agent.play(agent.max_step, env=agent.render_env)

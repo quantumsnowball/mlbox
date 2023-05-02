@@ -1,10 +1,8 @@
 from collections import deque
-from dataclasses import astuple, dataclass
-from typing import Any, Generic, SupportsFloat
+from dataclasses import dataclass
+from typing import Generic, SupportsFloat
 
-import numpy as np
 import torch as T
-from numpy.typing import NDArray
 from torch import Tensor, tensor
 from torch.utils.data import DataLoader, Dataset
 
@@ -12,18 +10,12 @@ from mlbox.types import T_Action, T_Obs
 
 
 @dataclass
-class Experience(Generic[T_Obs,
-                         T_Action]):
-    obs: T_Obs
-    action: T_Action
-    reward: SupportsFloat
-    next_obs: T_Obs
-    terminated: bool
-
-    def __post_init__(self) -> None:
-        # post processing
-        self.action = np.asarray(self.action.astype(np.float32))
-        self.reward = np.float32(self.reward)
+class Experience:
+    obs: Tensor
+    action: Tensor
+    reward: Tensor
+    next_obs: Tensor
+    terminated: Tensor
 
 
 @dataclass
@@ -39,19 +31,20 @@ class Batch:
         return (self.obs, self.action, self.reward, self.next_obs, self.terminated)
 
 
-class Replay(Dataset[Experience[T_Obs, T_Action]],
+class Replay(Dataset[Experience],
              Generic[T_Obs, T_Action]):
     def __init__(self,
-                 maxlen: int = 10000):
-        self._memory = deque[Experience[T_Obs,
-                                        T_Action]](maxlen=maxlen)
+                 maxlen: int = 10000,
+                 *,
+                 device: T.device = T.device('cpu')):
+        self.device = device
+        self._memory = deque[Experience](maxlen=maxlen)
 
     def __len__(self) -> int:
         return len(self._memory)
 
     def __getitem__(self,
-                    index: int) -> Experience[T_Obs,
-                                              T_Action]:
+                    index: int) -> Experience:
         return self._memory[index]
 
     def remember(self,
@@ -61,46 +54,40 @@ class Replay(Dataset[Experience[T_Obs, T_Action]],
                  next_obs: T_Obs,
                  terminated: bool) -> None:
         self._memory.append(
-            Experience[T_Obs, T_Action](
-                obs=obs,
-                action=action,
-                reward=reward,
-                next_obs=next_obs,
-                terminated=terminated,
+            Experience(
+                obs=tensor(obs, device=self.device, dtype=T.float32),
+                action=tensor(action, device=self.device, dtype=T.float32),
+                reward=tensor(reward, device=self.device, dtype=T.float32),
+                next_obs=tensor(next_obs, device=self.device, dtype=T.float32),
+                terminated=tensor(terminated, device=self.device, dtype=T.bool),
             )
         )
 
-    def sample(self,
-               batch_size: int,
-               *,
-               device: T.device = T.device('cpu')) -> Batch:
-        def collate(batch: list[Experience[T_Obs, T_Action]]) -> Batch:
-            # avoid create tensor from list of nd.array
-            def to_tensor(arr: NDArray[Any]) -> Tensor:
-                return tensor(arr, device=device)
+    def dataloader(self,
+                   batch_size: int) -> DataLoader[Experience]:
+        def collate(batch: list[Experience]) -> Batch:
             return Batch(
-                obs=to_tensor(np.stack([b.obs for b in batch])),
-                action=to_tensor(np.array([b.action for b in batch])),
-                reward=to_tensor(np.array([b.reward for b in batch])),
-                next_obs=to_tensor(np.stack([b.next_obs for b in batch])),
-                terminated=to_tensor(np.stack([b.terminated for b in batch]))
+                obs=T.stack([b.obs for b in batch]),
+                action=T.stack([b.action for b in batch]),
+                reward=T.stack([b.reward for b in batch]),
+                next_obs=T.stack([b.next_obs for b in batch]),
+                terminated=T.stack([b.terminated for b in batch])
             )
-
-        # sampling
-        loader = DataLoader[Experience[T_Obs, T_Action]](self,
-                                                         batch_size,
-                                                         shuffle=True,
-                                                         collate_fn=collate)
-        # pack
-        samples: Batch = next(iter(loader))
-        return samples
+        loader = DataLoader[Experience](self,
+                                        batch_size,
+                                        shuffle=True,
+                                        drop_last=True,
+                                        collate_fn=collate)
+        return loader
 
 
 class CachedReplay(Replay[T_Obs, T_Action]):
-    def __init__(self, maxlen: int = 10000):
-        super().__init__(maxlen)
-        self._cached = deque[Experience[T_Obs,
-                                        T_Action]]()
+    def __init__(self,
+                 maxlen: int = 10000,
+                 *,
+                 device: T.device = T.device('cpu')):
+        super().__init__(maxlen, device=device)
+        self._cached = deque[Experience]()
 
     def cache(self,
               obs: T_Obs,
@@ -109,12 +96,12 @@ class CachedReplay(Replay[T_Obs, T_Action]):
               next_obs: T_Obs,
               terminated: bool) -> None:
         self._cached.append(
-            Experience[T_Obs, T_Action](
-                obs=obs,
-                action=action,
-                reward=reward,
-                next_obs=next_obs,
-                terminated=terminated,
+            Experience(
+                obs=tensor(obs, device=self.device, dtype=T.float32),
+                action=tensor(action, device=self.device, dtype=T.float32),
+                reward=tensor(reward, device=self.device, dtype=T.float32),
+                next_obs=tensor(next_obs, device=self.device, dtype=T.float32),
+                terminated=tensor(terminated, device=self.device, dtype=T.bool),
             )
         )
 
@@ -125,4 +112,4 @@ class CachedReplay(Replay[T_Obs, T_Action]):
     # post processing helpers
     def assert_terminated_flag(self) -> None:
         last = self._cached[-1]
-        last.terminated = True
+        last.terminated = tensor(True, device=self.device)

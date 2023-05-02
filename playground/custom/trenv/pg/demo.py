@@ -28,7 +28,6 @@ INTERVAL = 5
 STEP = 0.2
 START_LV = 0.01
 N_FEATURE = 150
-MODEL_NAME = 'model.pth'
 
 Obs = npt.NDArray[np.float32]
 Action = npt.NDArray[np.int64]
@@ -172,6 +171,6 @@ backtest = Backtest(
 # main
 #
 agent = MyAgent()
-agent.prompt(MODEL_NAME, start_training=True)
+agent.prompt(start_training=True)
 backtest.run()
 backtest.result.save()
