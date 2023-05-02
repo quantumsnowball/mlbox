@@ -27,7 +27,7 @@ class ConvLSTM_DDPGActorNet(Module):
                  conv1d_stride: int = 3,
                  conv1d_padding: int = 2,
                  lstm_hidden_dim: int = 64,
-                 lstm_layers_n: int = 2):
+                 lstm_layers_n: int = 1):
         super().__init__()
         # const
         self.min_action = Parameter(tensor(min_action), requires_grad=False)
@@ -97,7 +97,7 @@ class ConvLSTM_DDPGCriticNet(Module):
                  conv1d_stride: int = 3,
                  conv1d_padding: int = 2,
                  lstm_hidden_dim: int = 64,
-                 lstm_layers_n: int = 2):
+                 lstm_layers_n: int = 1):
         super().__init__()
         # obs
         self.conv1d = Conv1d(in_channels=conv1d_in_channels,
