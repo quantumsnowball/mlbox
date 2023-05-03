@@ -1,46 +1,58 @@
 from itertools import chain
 
-import torch.nn as nn
 from torch import Tensor
 from torch.distributions import Categorical, Normal
+from torch.nn import (BatchNorm1d, Dropout, Identity, Linear, Module,
+                      ReLU, Sequential, Softplus, Tanh)
 
 
-class ActorCriticDiscrete(nn.Module):
+class ActorCriticDiscrete(Module):
     def __init__(self,
                  in_dim: int,
                  out_dim: int,
                  *,
+                 Activation: type[Module] = ReLU,
+                 batch_norm: bool = True,
+                 dropout: float | None = 0.0,
                  hidden_dim: int = 64,
                  base_n: int = 0,
                  actor_n: int = 0,
                  critic_n: int = 0):
         super().__init__()
         # base layer
-        self.base = nn.Sequential(
-            nn.Linear(in_dim, hidden_dim),
-            nn.ReLU(),
+        self.base = Sequential(
+            Linear(in_dim, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
+            Activation(),
+            Dropout(dropout) if dropout is not None else Identity(),
             *chain(*((
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.ReLU(),
+                Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
+                Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(base_n)))
         )
         # actor layer
-        self.actor = nn.Sequential(
+        self.actor = Sequential(
             *chain(*((
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.ReLU(),
+                Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
+                Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(actor_n))),
-            nn.Linear(hidden_dim, out_dim),
+            Linear(hidden_dim, out_dim),
         )
         # policy
         self.dist = Categorical  # DON'T define this inside forward()
         # critic
-        self.critic = nn.Sequential(
+        self.critic = Sequential(
             *chain(*((
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.ReLU(),
+                Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
+                Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(critic_n))),
-            nn.Linear(hidden_dim, 1),
+            Linear(hidden_dim, 1),
         )
 
     def forward(self, obs: Tensor) -> tuple[Categorical, Tensor]:
@@ -51,11 +63,14 @@ class ActorCriticDiscrete(nn.Module):
         return policy, value
 
 
-class ActorCriticContinuous(nn.Module):
+class ActorCriticContinuous(Module):
     def __init__(self,
                  in_dim: int,
                  out_dim: int,
                  *,
+                 Activation: type[Module] = ReLU,
+                 batch_norm: bool = True,
+                 dropout: float | None = 0.0,
                  hidden_dim: int = 64,
                  base_n: int = 0,
                  mu_n: int = 0,
@@ -65,41 +80,51 @@ class ActorCriticContinuous(nn.Module):
                  mu_scale: float = 1.0) -> None:
         super().__init__()
         # base
-        self.base = nn.Sequential(
-            nn.Linear(in_dim, hidden_dim),
-            nn.ReLU(),
+        self.base = Sequential(
+            Linear(in_dim, hidden_dim),
+            BatchNorm1d(hidden_dim) if batch_norm else Identity(),
+            Activation(),
+            Dropout(dropout) if dropout is not None else Identity(),
             *chain(*((
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.ReLU(),
+                Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
+                Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(base_n)))
         )
         # mu
-        self.mu = nn.Sequential(
+        self.mu = Sequential(
             *chain(*((
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.ReLU(),
+                Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
+                Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(mu_n))),
-            nn.Linear(hidden_dim, out_dim),
-            nn.Tanh() if mu_clip else nn.Identity()
+            Linear(hidden_dim, out_dim),
+            Tanh() if mu_clip else Identity()
         )
         # sigma
-        self.sigma = nn.Sequential(
+        self.sigma = Sequential(
             *chain(*((
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.ReLU(),
+                Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
+                Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(sigma_n))),
-            nn.Linear(hidden_dim, out_dim),
-            nn.Softplus(),
+            Linear(hidden_dim, out_dim),
+            Softplus(),
         )
         # policy
         self.dist = Normal
         # value
-        self.critic = nn.Sequential(
+        self.critic = Sequential(
             *chain(*((
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.ReLU(),
+                Linear(hidden_dim, hidden_dim),
+                BatchNorm1d(hidden_dim) if batch_norm else Identity(),
+                Activation(),
+                Dropout(dropout) if dropout is not None else Identity(),
             ) for _ in range(critic_n))),
-            nn.Linear(hidden_dim, 1),
+            Linear(hidden_dim, 1),
         )
         # const
         self.mu_scale = mu_scale
