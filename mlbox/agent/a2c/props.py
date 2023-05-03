@@ -1,3 +1,4 @@
+from typing_extensions import override
 from gymnasium import Env
 from gymnasium.spaces import Box, Discrete
 from torch.nn import Module
@@ -29,3 +30,13 @@ class Props(Agent[T_Obs, T_Action]):
     @optimizer.setter
     def optimizer(self, optimizer: Optimizer) -> None:
         self._optimizer = optimizer
+
+    #
+    # helpers
+    #
+    @property
+    @override
+    def neural_nets(self) -> dict[str, Module]:
+        return dict(
+            actor_critic_net=self.actor_critic_net,
+        )

@@ -27,7 +27,8 @@ class A2CAgent(Props[T_Obs, T_Action],
 
     @override
     def learn(self) -> None:
-        self.actor_critic_net.train()
+        # set mode
+        self.use_train_mode()
         # batch
         obs, action, reward, next_obs, terminated = self.buffer.recall(self.device).tuple
         # actor and critic
@@ -46,13 +47,15 @@ class A2CAgent(Props[T_Obs, T_Action],
         loss.backward()
         clip_grad_norm_(self.actor_critic_net.parameters(), max_norm=1.0)
         self.optimizer.step()
+        # reset mode
+        self.use_eval_mode()
 
     n_eps = 1000
 
     @override
     def train(self) -> None:
-        self.actor_critic_net.train()
         self.reset_rolling_reward()
+        self.reset_eps_timer()
         # episode loop
         for i_eps in range(1, self.n_eps+1):
             try:
@@ -94,10 +97,11 @@ class A2CAgent(Props[T_Obs, T_Action],
 
     @override
     def decide(self, obs: T_Obs) -> T_Action:
+        self.use_eval_mode()
         with torch.no_grad():
-            obs_tensor = torch.tensor(obs, device=self.device)
+            obs_tensor = torch.tensor(obs, device=self.device).unsqueeze(0)
             policy, _ = self.actor_critic_net(obs_tensor)
-            action: T_Action = policy.sample().cpu().numpy()
+            action: T_Action = policy.sample().squeeze(0).cpu().numpy()
             return action
 
     #
