@@ -63,6 +63,7 @@ class A2CAgent(Props[T_Obs, T_Action],
                 self.buffer.clear()
                 # reset to a new environment
                 obs, *_ = self.env.reset()
+                obs = self.encode_obs(obs)
                 # step loop
                 for _ in range(self.max_step):
                     # act
@@ -70,6 +71,7 @@ class A2CAgent(Props[T_Obs, T_Action],
                     # step
                     try:
                         next_obs, reward, terminated, truncated, *_ = self.env.step(action)
+                        next_obs = self.encode_obs(next_obs)
                     except TerminatedError:
                         break
                     done = terminated or truncated

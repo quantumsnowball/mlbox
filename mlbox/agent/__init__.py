@@ -54,6 +54,14 @@ class BasicAgent(Props[T_Obs, T_Action],
             net.eval()
 
     #
+    # Observing
+    #
+    @override
+    def encode_obs(self, obs: T_Obs) -> T_Obs:
+        # default with no encoding
+        return obs
+
+    #
     # training
     #
 
@@ -70,12 +78,14 @@ class BasicAgent(Props[T_Obs, T_Action],
         env = env if env is not None else self.env
         # reset to a new environment
         obs, *_ = env.reset()
+        obs = self.encode_obs(obs)
         # run the env
         total_reward = 0.0
         for _ in range(max_step):
             action = self.decide(obs)
             try:
                 next_obs, reward, terminated, *_ = env.step(action)
+                next_obs = self.encode_obs(next_obs)
             except TerminatedError:
                 break
             obs = next_obs
